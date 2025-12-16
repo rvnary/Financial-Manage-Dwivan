@@ -5,29 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
@@ -187,13 +165,6 @@ export function InvestmentRecommendations({
                 : "bg-red-950 border-red-800"
             }`}
           >
-          <div
-            className={`p-4 rounded-lg border ${
-              hasRemainingMoney
-                ? "bg-green-950 border-green-800"
-                : "bg-red-950 border-red-800"
-            }`}
-          >
             <div className="text-sm text-gray-400 mb-1">Remaining Money</div>
             <div
               className={`text-3xl font-bold ${
@@ -206,9 +177,6 @@ export function InvestmentRecommendations({
               <div className="flex items-center gap-2 mt-2 text-red-400">
                 <AlertCircle className="w-4 h-4" />
                 <span className="text-sm">
-                  {remainingMoney < 0
-                    ? "Your expenses exceed your income!"
-                    : "No money available for investment"}
                   {remainingMoney < 0
                     ? "Your expenses exceed your income!"
                     : "No money available for investment"}
@@ -276,7 +244,6 @@ export function InvestmentRecommendations({
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium text-white">Investment Details</h4>
-                  <div className="text-right"></div>
                 </div>
 
                 {allocationData.map((item, index) => (
@@ -299,12 +266,6 @@ export function InvestmentRecommendations({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-white">
-                        Rp {item.value.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {item.percentage}%
-                      </div>
                       <div className="font-medium text-white">
                         Rp {item.value.toLocaleString("id-ID")}
                       </div>
@@ -351,9 +312,6 @@ export function InvestmentRecommendations({
               <h4 className="font-medium text-amber-400 mb-2">
                 ⚠️ Budget Adjustment Needed
               </h4>
-              <h4 className="font-medium text-amber-400 mb-2">
-                ⚠️ Budget Adjustment Needed
-              </h4>
               <ul className="text-sm text-amber-300 space-y-1">
                 <li>• Review your expenses and identify areas to cut back</li>
                 <li>• Prioritize essential expenses over non-essential ones</li>
@@ -367,4 +325,3 @@ export function InvestmentRecommendations({
     </Card>
   );
 }
-
