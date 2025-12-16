@@ -342,6 +342,11 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
           These are educational examples only and not financial advice. Past performance does not guarantee 
           future results. All investments carry risk. Please consult with a qualified financial advisor 
           before making investment decisions.
+
+          Project Tugas ini adalah contoh edukasi saja dan bukan merupakan nasihat keuangan.
+          Semua investasi mengandung risiko.
+          Mohon konsultasikan dengan penasihat keuangan yang berkualifikasi sebelum membuat
+          keputusan untuk ber-investasi.
         </p>
       </div>
     </div>
