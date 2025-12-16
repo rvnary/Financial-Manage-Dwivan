@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { InvestmentRecommendations } from "./InvestmentRecommendations";
-import { InvestmentCharts } from "./InvestmentCharts";
+import { InvestmentCharts } from "./InvestmentChartsNew";
 import { ArrowLeft } from "lucide-react";
 
 interface FinancialPlannerProps {
