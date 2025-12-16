@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 import { InvestmentRecommendations } from "./InvestmentRecommendations";
 import { InvestmentCharts } from "./InvestmentCharts";
 import { ArrowLeft } from "lucide-react";
@@ -19,6 +25,21 @@ interface FormData {
   pocketMoney: string;
 }
 
+// Format number to IDR currency display
+const formatToIDR = (value: string | number): string => {
+  const numValue =
+    typeof value === "string" ? value.replace(/\D/g, "") : value.toString();
+  if (!numValue) return "";
+
+  // Format number with thousands separator
+  return new Intl.NumberFormat("id-ID").format(parseInt(numValue));
+};
+
+// Parse IDR string to number
+const parseIDR = (value: string): number => {
+  return parseInt(value.replace(/\D/g, "")) || 0;
+};
+
 export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [formData, setFormData] = useState<FormData>({
     monthlySalary: "",
@@ -32,18 +53,20 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [remainingMoney, setRemainingMoney] = useState(0);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Only keep digits
+    const cleanValue = value.replace(/\D/g, "");
+    setFormData((prev) => ({ ...prev, [field]: cleanValue }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const salary = parseFloat(formData.monthlySalary) || 0;
-    const primary = parseFloat(formData.primaryExpenses) || 0;
-    const secondary = parseFloat(formData.secondaryExpenses) || 0;
-    const savings = parseFloat(formData.savings) || 0;
-    const pocket = parseFloat(formData.pocketMoney) || 0;
-    
+
+    const salary = parseIDR(formData.monthlySalary);
+    const primary = parseIDR(formData.primaryExpenses);
+    const secondary = parseIDR(formData.secondaryExpenses);
+    const savings = parseIDR(formData.savings);
+    const pocket = parseIDR(formData.pocketMoney);
+
     const remaining = salary - primary - secondary - savings - pocket;
     setRemainingMoney(remaining);
     setShowResults(true);
@@ -64,11 +87,11 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 py-8">
       <div className="container mx-auto px-4">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={onBack}
           className="mb-6 hover:bg-gray-800 text-gray-300"
-          style={{ color: '#70e000' }}
+          style={{ color: "#70e000" }}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
@@ -81,95 +104,129 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
               <CardHeader>
                 <CardTitle className="text-white">Financial Details</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Enter your monthly financial information to get personalized recommendations
+                  Enter your monthly financial information to get personalized
+                  recommendations
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="salary" className="text-gray-300">Monthly Salary</Label>
+                    <Label htmlFor="salary" className="text-gray-300">
+                      Monthly Salary
+                    </Label>
                     <Input
                       id="salary"
-                      type="number"
-                      placeholder="Enter your monthly salary"
-                      value={formData.monthlySalary}
-                      onChange={(e) => handleInputChange("monthlySalary", e.target.value)}
+                      type="text"
+                      placeholder="0"
+                      value={
+                        formData.monthlySalary
+                          ? formatToIDR(formData.monthlySalary)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleInputChange("monthlySalary", e.target.value)
+                      }
                       required
-                      min="0"
-                      step="0.01"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="primary" className="text-gray-300">Primary Expenses</Label>
+                    <Label htmlFor="primary" className="text-gray-300">
+                      Primary Expenses
+                    </Label>
                     <Input
                       id="primary"
-                      type="number"
-                      placeholder="Rent, utilities, food, etc."
-                      value={formData.primaryExpenses}
-                      onChange={(e) => handleInputChange("primaryExpenses", e.target.value)}
+                      type="text"
+                      placeholder="0 - Rent, utilities, food, etc."
+                      value={
+                        formData.primaryExpenses
+                          ? formatToIDR(formData.primaryExpenses)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleInputChange("primaryExpenses", e.target.value)
+                      }
                       required
-                      min="0"
-                      step="0.01"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="secondary" className="text-gray-300">Secondary Expenses</Label>
+                    <Label htmlFor="secondary" className="text-gray-300">
+                      Secondary Expenses
+                    </Label>
                     <Input
                       id="secondary"
-                      type="number"
-                      placeholder="Entertainment, subscriptions, etc."
-                      value={formData.secondaryExpenses}
-                      onChange={(e) => handleInputChange("secondaryExpenses", e.target.value)}
+                      type="text"
+                      placeholder="0 - Entertainment, subscriptions, etc."
+                      value={
+                        formData.secondaryExpenses
+                          ? formatToIDR(formData.secondaryExpenses)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleInputChange("secondaryExpenses", e.target.value)
+                      }
                       required
-                      min="0"
-                      step="0.01"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="savings" className="text-gray-300">Savings</Label>
+                    <Label htmlFor="savings" className="text-gray-300">
+                      Savings
+                    </Label>
                     <Input
                       id="savings"
-                      type="number"
-                      placeholder="Monthly savings amount"
-                      value={formData.savings}
-                      onChange={(e) => handleInputChange("savings", e.target.value)}
+                      type="text"
+                      placeholder="0 - Monthly savings amount"
+                      value={
+                        formData.savings ? formatToIDR(formData.savings) : ""
+                      }
+                      onChange={(e) =>
+                        handleInputChange("savings", e.target.value)
+                      }
                       required
-                      min="0"
-                      step="0.01"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="pocket" className="text-gray-300">Pocket Money / Spending Money</Label>
+                    <Label htmlFor="pocket" className="text-gray-300">
+                      Pocket Money / Spending Money
+                    </Label>
                     <Input
                       id="pocket"
-                      type="number"
-                      placeholder="Personal spending money"
-                      value={formData.pocketMoney}
-                      onChange={(e) => handleInputChange("pocketMoney", e.target.value)}
+                      type="text"
+                      placeholder="0 - Personal spending money"
+                      value={
+                        formData.pocketMoney
+                          ? formatToIDR(formData.pocketMoney)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleInputChange("pocketMoney", e.target.value)
+                      }
                       required
-                      min="0"
-                      step="0.01"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="flex gap-4">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="flex-1 text-white hover:opacity-90"
-                      style={{ backgroundColor: '#007200' }}
+                      style={{ backgroundColor: "#007200" }}
                     >
                       Calculate
                     </Button>
-                    <Button type="button" variant="outline" onClick={handleReset} className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleReset}
+                      className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                    >
                       Reset
                     </Button>
                   </div>
@@ -180,9 +237,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
             {/* Results Section */}
             <div>
               {showResults && (
-                <InvestmentRecommendations 
+                <InvestmentRecommendations
                   remainingMoney={remainingMoney}
-                  monthlySalary={parseFloat(formData.monthlySalary) || 0}
+                  monthlySalary={parseIDR(formData.monthlySalary)}
                 />
               )}
             </div>
