@@ -12,7 +12,7 @@ Tentu, ini adalah versi **README.md** yang sudah diperbaiki formatnya, dirapikan
 
 ## 📖 Tentang Proyek
 
-**Financial Manage Dwivan** adalah platform berbasis web untuk **Smart Financial Planning** (Perencanaan Keuangan Cerdas). Aplikasi ini dirancang untuk membantu pengguna, khususnya mahasiswa dan profesional muda, dalam mengelola keuangan pribadi mereka dengan lebih efektif.
+**Financial Manage & Adviser** adalah aplikasi web modern yang dirancang untuk membantu pengguna dalam merencanakan keuangan pribadi dan memantau portofolio investasi secara _real-time_.
 
 Aplikasi ini tidak hanya mencatat pengeluaran, tetapi juga membantu menghitung sisa anggaran bulanan dan memberikan **rekomendasi investasi** yang dipersonalisasi berdasarkan data pasar saham _real-time_.
 
@@ -120,3 +120,5 @@ Buka browser dan akses alamat lokal yang muncul (biasanya `http://localhost:5173
 ```
 
 ```
+
+Project ini dibuat untuk tugas o(*￣▽￣*)ブ
