@@ -31,8 +31,8 @@ const formatToIDR = (value: string | number): string => {
     typeof value === "string" ? value.replace(/\D/g, "") : value.toString();
   if (!numValue) return "";
 
-  // Format number with thousands separator
-  return new Intl.NumberFormat("id-ID").format(parseInt(numValue));
+  // Format number with thousands separator and Rp prefix
+  return "Rp " + new Intl.NumberFormat("id-ID").format(parseInt(numValue));
 };
 
 // Parse IDR string to number
