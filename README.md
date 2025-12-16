@@ -1,5 +1,3 @@
-Tentu, ini adalah versi **README.md** yang sudah diperbaiki formatnya, dirapikan, dan digabungkan menjadi satu file yang siap untuk langsung di-_copy-paste_.
-
 ````markdown
 # 📈 Financial Manage Dwivan
 
