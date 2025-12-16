@@ -9,7 +9,7 @@
 
 ## 📖 Tentang Proyek
 
-**Financial Manage Dwivan** adalah aplikasi web modern yang dirancang untuk membantu pengguna dalam merencanakan keuangan pribadi dan memantau portofolio investasi secara _real-time_.
+**Financial Manage & Adviser** adalah aplikasi web modern yang dirancang untuk membantu pengguna dalam merencanakan keuangan pribadi dan memantau portofolio investasi secara _real-time_.
 
 Proyek ini dibuat untuk memenuhi kebutuhan manajemen finansial yang interaktif dengan memanfaatkan data pasar saham aktual. Aplikasi ini mengintegrasikan visualisasi data yang intuitif untuk memudahkan pengambilan keputusan investasi.
 
