@@ -25,6 +25,8 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             Take control of your finances with our intelligent money management tool. 
             Calculate your remaining budget and get personalized investment recommendations 
             to make your money work for you.
+
+            ⚠️Website Ini Hanya Sebagai Contoh Saja⚠️
           </p>
           
           <Button 
