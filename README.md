@@ -56,3 +56,5 @@ financial-manage-dwivan/
 ├── vite.config.ts            # Konfigurasi Vite
 └── tsconfig.json             # Konfigurasi TypeScript
 ```
+
+Project ini dibuat untuk tugas o(*￣▽￣*)ブ
