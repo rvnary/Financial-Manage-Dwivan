@@ -325,6 +325,140 @@ export function InvestmentRecommendations({
                 })}
               </div>
 
+              {/* Total Portfolio Return Summary */}
+              {stockReturns.length > 0 && (
+                <div
+                  className="rounded-lg p-4 border mt-4"
+                  style={{
+                    backgroundColor: "#70e00015",
+                    borderColor: "#70e00030",
+                  }}
+                >
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-white flex items-center gap-2">
+                      <TrendingUp
+                        className="w-4 h-4"
+                        style={{ color: "#70e000" }}
+                      />
+                      Total Expected Return (30 days)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-400 mb-1">
+                          Average Return Rate
+                        </div>
+                        <div className="text-2xl font-bold text-white">
+                          {(() => {
+                            const spyReturn = returnMap.get("SPY") || 0;
+                            const jnjReturn = returnMap.get("JNJ") || 0;
+                            const aaplReturn = returnMap.get("AAPL") || 0;
+
+                            let spyWeight = 0.4,
+                              jnjWeight = 0.35,
+                              aaplWeight = 0.25;
+
+                            if (selectedProfile === "low") {
+                              spyWeight = 0.5;
+                              jnjWeight = 0.3;
+                              aaplWeight = 0.2;
+                            } else if (selectedProfile === "high") {
+                              spyWeight = 0.3;
+                              jnjWeight = 0.4;
+                              aaplWeight = 0.3;
+                            }
+
+                            const avgReturn =
+                              (spyReturn * spyWeight +
+                                jnjReturn * jnjWeight +
+                                aaplReturn * aaplWeight) /
+                              100;
+                            return `${(avgReturn * 100).toFixed(1)}%`;
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-400 mb-1">
+                          Total Gain in Rupiah
+                        </div>
+                        <div
+                          className="text-2xl font-bold"
+                          style={{ color: "#10b981" }}
+                        >
+                          {(() => {
+                            const spyReturn = returnMap.get("SPY") || 0;
+                            const jnjReturn = returnMap.get("JNJ") || 0;
+                            const aaplReturn = returnMap.get("AAPL") || 0;
+
+                            let spyWeight = 0.4,
+                              jnjWeight = 0.35,
+                              aaplWeight = 0.25;
+
+                            if (selectedProfile === "low") {
+                              spyWeight = 0.5;
+                              jnjWeight = 0.3;
+                              aaplWeight = 0.2;
+                            } else if (selectedProfile === "high") {
+                              spyWeight = 0.3;
+                              jnjWeight = 0.4;
+                              aaplWeight = 0.3;
+                            }
+
+                            const avgReturn =
+                              spyReturn * spyWeight +
+                              jnjReturn * jnjWeight +
+                              aaplReturn * aaplWeight;
+                            const totalGain = Math.round(
+                              remainingMoney * (avgReturn / 100)
+                            );
+                            return `Rp ${totalGain.toLocaleString("id-ID")}`;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="pt-3 border-t"
+                      style={{ borderColor: "#70e00030" }}
+                    >
+                      <div className="text-xs text-gray-400 mb-1">
+                        Total Portfolio Value After 30 Days
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {(() => {
+                          const spyReturn = returnMap.get("SPY") || 0;
+                          const jnjReturn = returnMap.get("JNJ") || 0;
+                          const aaplReturn = returnMap.get("AAPL") || 0;
+
+                          let spyWeight = 0.4,
+                            jnjWeight = 0.35,
+                            aaplWeight = 0.25;
+
+                          if (selectedProfile === "low") {
+                            spyWeight = 0.5;
+                            jnjWeight = 0.3;
+                            aaplWeight = 0.2;
+                          } else if (selectedProfile === "high") {
+                            spyWeight = 0.3;
+                            jnjWeight = 0.4;
+                            aaplWeight = 0.3;
+                          }
+
+                          const avgReturn =
+                            spyReturn * spyWeight +
+                            jnjReturn * jnjWeight +
+                            aaplReturn * aaplWeight;
+                          const totalGain = Math.round(
+                            remainingMoney * (avgReturn / 100)
+                          );
+                          return `Rp ${(
+                            remainingMoney + totalGain
+                          ).toLocaleString("id-ID")}`;
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Additional Tips */}
               <div
                 className="rounded-lg p-4 border"
