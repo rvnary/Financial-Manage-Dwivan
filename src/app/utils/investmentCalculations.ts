@@ -307,6 +307,19 @@ export function formatUSD(value: number): string {
 }
 
 /**
+ * Format number to IDR currency (Indonesian Rupiah)
+ * Used for investment amounts
+ */
+export function formatIDR(value: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
  * Format percentage
  */
 export function formatPercentage(value: number, decimals: number = 1): string {

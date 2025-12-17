@@ -31,6 +31,7 @@ import {
   calculatePortfolioReturnByProfile,
   getPortfolioAllocation,
   formatUSD,
+  formatIDR,
   formatPercentage,
   AllocationRecommendation,
   PriceAnalysis,
@@ -207,11 +208,11 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#d1d5db" }}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#d1d5db" }}
             domain={["dataMin - 100", "dataMax + 100"]}
           />
           <Tooltip
@@ -255,11 +256,11 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#d1d5db" }}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 11, fill: "#d1d5db" }}
             domain={["dataMin - 100", "dataMax + 100"]}
           />
           <Tooltip
@@ -296,7 +297,9 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
     if (remainingMoney <= 0) return 0;
     // Allocate 30% to each investment
     const investmentAmount = remainingMoney * 0.3;
-    const returnAmount = investmentAmount * (investment.expectedReturn / 100);
+    // Use monthly return (30-day), not annualized
+    const monthlyReturnPercent = investment.priceAnalysis?.monthlyReturn || 0;
+    const returnAmount = investmentAmount * (monthlyReturnPercent / 100);
     return returnAmount;
   };
 
@@ -389,8 +392,8 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
         <h2 className="text-2xl text-white">Investment Opportunities</h2>
       </div>
       <p className="text-gray-400">
-        Based on historical market analysis and CAGR calculations, here are top
-        investment recommendations with expected annualized returns
+        Based on historical market analysis, here are top investment
+        recommendations with expected 30-day returns
         {isAlphaVantageConfigured() ? (
           <span className="text-green-400"> (Real-time market data)</span>
         ) : (
@@ -432,19 +435,22 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                   >
                     <ArrowUpRight className="w-5 h-5" />
                     <span className="text-2xl">
-                      +{investment.expectedReturn.toFixed(1)}%
+                      +
+                      {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
+                        investment.expectedReturn.toFixed(1)}
+                      %
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400">Annualized Return</div>
+                  <div className="text-xs text-gray-400">30-Day Return</div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
               {/* Price Analysis Summary */}
               {investment.priceAnalysis && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-3 bg-gray-700 rounded-lg">
+                <div className="grid grid-cols-3 md:grid-cols-3 gap-4 mb-6 p-3 bg-gray-700 rounded-lg">
                   <div>
-                    <div className="text-xs text-gray-400">Monthly Return</div>
+                    <div className="text-xs text-gray-400">30-Day Return</div>
                     <div
                       className="text-lg font-semibold"
                       style={{
@@ -455,22 +461,6 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                       }}
                     >
                       {investment.priceAnalysis.monthlyReturn.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">CAGR (Annual)</div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={{
-                        color:
-                          investment.priceAnalysis.annualizedCAGR >= 0
-                            ? "#10b981"
-                            : "#ef4444",
-                      }}
-                    >
-                      {formatPercentage(
-                        investment.priceAnalysis.annualizedCAGR
-                      )}
                     </div>
                   </div>
                   <div>
@@ -552,28 +542,44 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                     borderColor: "#70e00030",
                   }}
                 >
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="grid grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
                         Suggested Investment
                       </div>
                       <div className="font-medium text-white">
-                        {formatUSD(remainingMoney * 0.3)}
+                        {formatIDR(remainingMoney * 0.3)}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
-                        Potential Return (30 days)
+                        Return (%)
+                      </div>
+                      <div className="font-medium" style={{ color: "#10b981" }}>
+                        +
+                        {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
+                          investment.expectedReturn.toFixed(1)}
+                        %
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">
+                        Total Gain (30 days)
                       </div>
                       <div className="font-medium" style={{ color: "#70e000" }}>
-                        {formatUSD(calculatePotentialReturn(investment))}
+                        {formatIDR(calculatePotentialReturn(investment))}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
-                        Time Horizon
+                        Total Value
                       </div>
-                      <div className="font-medium text-white">30 days</div>
+                      <div className="font-medium text-white">
+                        {formatIDR(
+                          remainingMoney * 0.3 +
+                            calculatePotentialReturn(investment)
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -588,10 +594,12 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                   <span className="font-medium text-white">
                     Recommendation:
                   </span>{" "}
-                  Consider investing in {investment.name} with an annualized
-                  expected return of{" "}
+                  Consider investing in {investment.name} with an expected
+                  30-day return of{" "}
                   <span className="font-medium" style={{ color: "#70e000" }}>
-                    {investment.expectedReturn.toFixed(1)}%
+                    {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
+                      investment.expectedReturn.toFixed(1)}
+                    %
                   </span>
                   .{" "}
                   {investment.riskLevel === "High" &&
@@ -680,13 +688,13 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-gray-400 mb-1">
-                  Expected Portfolio Return (Annual)
+                  Expected Portfolio Return (30 days)
                 </div>
                 <div
                   className="text-2xl font-bold"
                   style={{ color: "#70e000" }}
                 >
-                  +{portfolioReturn.toFixed(1)}%
+                  +{(portfolioReturn / 12).toFixed(1)}%
                 </div>
               </div>
               <div>
@@ -713,7 +721,7 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                 <span className="font-medium text-white">
                   Suggested Investment Amount:
                 </span>{" "}
-                {formatUSD(remainingMoney)}
+                {formatIDR(remainingMoney)}
               </div>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 {portfolioAllocations.slice(0, 3).map((alloc, index) => (
@@ -722,7 +730,7 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
                       {alloc.name}
                     </div>
                     <div className="font-semibold text-white">
-                      {formatUSD(remainingMoney * alloc.weight)}
+                      {formatIDR(remainingMoney * alloc.weight)}
                     </div>
                   </div>
                 ))}
