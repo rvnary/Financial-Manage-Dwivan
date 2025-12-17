@@ -252,7 +252,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
           {/* Investment Charts Section */}
           {showResults && remainingMoney > 0 && (
             <div className="mt-8">
-              <InvestmentCharts 
+              <InvestmentCharts
                 remainingMoney={remainingMoney}
                 onStockReturnsChange={setStockReturns}
               />

@@ -313,7 +313,8 @@ export function InvestmentRecommendations({
                           {item.percentage}%
                         </div>
                         <div className="text-xs" style={{ color: "#70e000" }}>
-                          +Rp {gain.toLocaleString("id-ID")} ({monthlyReturn.toFixed(1)}%)
+                          +Rp {gain.toLocaleString("id-ID")} (
+                          {monthlyReturn.toFixed(1)}%)
                         </div>
                         <div className="text-xs text-gray-300">
                           Total: Rp {totalValue.toLocaleString("id-ID")}

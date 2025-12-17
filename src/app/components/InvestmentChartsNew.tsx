@@ -39,7 +39,9 @@ import {
 
 interface InvestmentChartsProps {
   remainingMoney: number;
-  onStockReturnsChange?: (returns: Array<{ symbol: string; monthlyReturn: number }>) => void;
+  onStockReturnsChange?: (
+    returns: Array<{ symbol: string; monthlyReturn: number }>
+  ) => void;
 }
 
 interface InvestmentOption {
@@ -66,7 +68,10 @@ interface InvestmentOption {
   weight?: number; // Portfolio weight
 }
 
-export function InvestmentCharts({ remainingMoney, onStockReturnsChange }: InvestmentChartsProps) {
+export function InvestmentCharts({
+  remainingMoney,
+  onStockReturnsChange,
+}: InvestmentChartsProps) {
   const [investments, setInvestments] = useState<InvestmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
