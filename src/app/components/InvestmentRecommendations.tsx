@@ -12,6 +12,10 @@ import { useState } from "react";
 interface InvestmentRecommendationsProps {
   remainingMoney: number;
   monthlySalary: number;
+  stockReturns?: Array<{
+    symbol: string;
+    monthlyReturn: number;
+  }>;
 }
 
 type RiskProfile = "low" | "medium" | "high";
@@ -29,11 +33,22 @@ interface AllocationOption {
   expectedReturn: string;
 }
 
+interface StockReturn {
+  symbol: string;
+  monthlyReturn: number; // percentage
+}
+
 export function InvestmentRecommendations({
   remainingMoney,
   monthlySalary,
+  stockReturns = [],
 }: InvestmentRecommendationsProps) {
   const [selectedProfile, setSelectedProfile] = useState<RiskProfile>("medium");
+
+  // Create a map of stock returns by symbol
+  const returnMap = new Map(
+    stockReturns.map((sr) => [sr.symbol, sr.monthlyReturn])
+  );
 
   // Risk profile allocations for SPY, JNJ, AAPL
   const allocationOptions: AllocationOption[] = [
@@ -223,9 +238,29 @@ export function InvestmentRecommendations({
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ symbol, percentage }) =>
-                          `${symbol} ${percentage}%`
-                        }
+                        label={({ symbol, percentage, cx, cy, midAngle }) => {
+                          const radius = 100;
+                          const RADIAN = Math.PI / 180;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              textAnchor={x > cx ? "start" : "end"}
+                              dominantBaseline="central"
+                              className="font-bold"
+                              style={{
+                                fill: "white",
+                                fontSize: "14px",
+                                stroke: "rgba(0,0,0,0.7)",
+                                strokeWidth: "0.5px",
+                              }}
+                            >
+                              {`${symbol} ${percentage}%`}
+                            </text>
+                          );
+                        }}
                         outerRadius={70}
                         fill="#8884d8"
                         dataKey="value"
@@ -246,35 +281,47 @@ export function InvestmentRecommendations({
                   <h4 className="font-medium text-white">Investment Details</h4>
                 </div>
 
-                {allocationData.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <div>
+                {allocationData.map((item, index) => {
+                  const monthlyReturn = returnMap.get(item.symbol) || 0;
+                  const gain = Math.round(item.value * (monthlyReturn / 100));
+                  const totalValue = item.value + gain;
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <div>
+                          <div className="font-medium text-white">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Ticker: {item.symbol}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
                         <div className="font-medium text-white">
-                          {item.name}
+                          Rp {item.value.toLocaleString("id-ID")}
                         </div>
-                        <div className="text-xs text-gray-400">
-                          Ticker: {item.symbol}
+                        <div className="text-xs text-gray-400 mb-1">
+                          {item.percentage}%
+                        </div>
+                        <div className="text-xs" style={{ color: "#70e000" }}>
+                          +Rp {gain.toLocaleString("id-ID")} ({monthlyReturn.toFixed(1)}%)
+                        </div>
+                        <div className="text-xs text-gray-300">
+                          Total: Rp {totalValue.toLocaleString("id-ID")}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium text-white">
-                        Rp {item.value.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {item.percentage}%
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Additional Tips */}

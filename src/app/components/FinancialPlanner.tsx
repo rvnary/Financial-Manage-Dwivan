@@ -51,6 +51,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
   const [showResults, setShowResults] = useState(false);
   const [remainingMoney, setRemainingMoney] = useState(0);
+  const [stockReturns, setStockReturns] = useState<
+    Array<{ symbol: string; monthlyReturn: number }>
+  >([]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     // Only keep digits
@@ -240,6 +243,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                 <InvestmentRecommendations
                   remainingMoney={remainingMoney}
                   monthlySalary={parseIDR(formData.monthlySalary)}
+                  stockReturns={stockReturns}
                 />
               )}
             </div>
@@ -248,7 +252,10 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
           {/* Investment Charts Section */}
           {showResults && remainingMoney > 0 && (
             <div className="mt-8">
-              <InvestmentCharts remainingMoney={remainingMoney} />
+              <InvestmentCharts 
+                remainingMoney={remainingMoney}
+                onStockReturnsChange={setStockReturns}
+              />
             </div>
           )}
         </div>

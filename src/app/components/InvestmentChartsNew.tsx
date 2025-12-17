@@ -39,6 +39,7 @@ import {
 
 interface InvestmentChartsProps {
   remainingMoney: number;
+  onStockReturnsChange?: (returns: Array<{ symbol: string; monthlyReturn: number }>) => void;
 }
 
 interface InvestmentOption {
@@ -65,7 +66,7 @@ interface InvestmentOption {
   weight?: number; // Portfolio weight
 }
 
-export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
+export function InvestmentCharts({ remainingMoney, onStockReturnsChange }: InvestmentChartsProps) {
   const [investments, setInvestments] = useState<InvestmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +178,15 @@ export function InvestmentCharts({ remainingMoney }: InvestmentChartsProps) {
 
       setInvestments(loadedInvestments);
       setLoading(false);
+
+      // Call callback with stock returns
+      if (onStockReturnsChange) {
+        const stockReturns = loadedInvestments.map((inv) => ({
+          symbol: inv.symbol,
+          monthlyReturn: inv.priceAnalysis?.monthlyReturn || 0,
+        }));
+        onStockReturnsChange(stockReturns);
+      }
     };
 
     loadInvestmentData();
