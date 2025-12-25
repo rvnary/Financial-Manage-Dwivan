@@ -148,6 +148,97 @@ export function generateForecastData(
 }
 
 /**
+ * Interpolate historical data to fill exactly 30 calendar days
+ * This ensures X-axis shows full 30 days even if API only returns trading days
+ */
+export function interpolateHistoricalData(
+  historicalData: Array<{
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  }>
+): Array<{
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}> {
+  if (historicalData.length === 0) return historicalData;
+
+  const result = [];
+  const startDate = new Date();
+  // Hitung mundur 30 hari dari hari ini
+  startDate.setDate(startDate.getDate() - 30);
+
+  // Map data berdasarkan tanggal untuk lookup cepat
+  const dataMap = new Map(
+    historicalData.map((d) => {
+      const dateStr = d.date; // format: "1 Jan", "2 Jan", etc
+      return [dateStr, d];
+    })
+  );
+
+  // Buat array 30 hari penuh
+  for (let i = 0; i <= 30; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(currentDate.getDate() + i);
+    const dateKey = currentDate.toLocaleDateString("id-ID", {
+      month: "short",
+      day: "numeric",
+    });
+
+    let dataPoint = dataMap.get(dateKey);
+
+    if (!dataPoint && result.length > 0) {
+      // Jika tidak ada data untuk hari ini, interpolasi antara data sebelumnya dan sesudahnya
+      const prevData = result[result.length - 1];
+
+      // Cari data berikutnya
+      let nextData = null;
+      for (let j = i + 1; j <= 30; j++) {
+        const futureDate = new Date(startDate);
+        futureDate.setDate(futureDate.getDate() + j);
+        const futureKey = futureDate.toLocaleDateString("id-ID", {
+          month: "short",
+          day: "numeric",
+        });
+        if (dataMap.has(futureKey)) {
+          nextData = dataMap.get(futureKey);
+          break;
+        }
+      }
+
+      if (nextData) {
+        // Linear interpolation antara prevData dan nextData
+        const prevClose = prevData.close;
+        const nextClose = nextData.close;
+        const interpolatedClose = (prevClose + nextClose) / 2;
+
+        dataPoint = {
+          date: dateKey,
+          open: (prevData.open + nextData.open) / 2,
+          high: Math.max(prevData.high, nextData.high),
+          low: Math.min(prevData.low, nextData.low),
+          close: interpolatedClose,
+        };
+      } else {
+        // Jika tidak ada data berikutnya, gunakan data terakhir
+        dataPoint = { ...prevData, date: dateKey };
+      }
+    }
+
+    if (dataPoint) {
+      result.push(dataPoint);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Calculate portfolio weighted expected return
  * @param investments Array of investments with their weights and expected returns
  * @returns Total weighted expected return

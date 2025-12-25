@@ -19,7 +19,12 @@ import {
   Bar,
   Cell,
 } from "recharts";
-import { TrendingUp, ArrowUpRight, Loader2 } from "lucide-react";
+import {
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
+} from "lucide-react";
 import {
   fetchAlphaVantageData,
   isAlphaVantageConfigured,
@@ -35,6 +40,7 @@ import {
   formatPercentage,
   AllocationRecommendation,
   PriceAnalysis,
+  interpolateHistoricalData,
 } from "../utils/investmentCalculations";
 
 interface InvestmentChartsProps {
@@ -133,12 +139,16 @@ export function InvestmentCharts({
           // Fetch ONLY from Alpha Vantage API - NO MOCK DATA
           const historicalData = await fetchAlphaVantageData(investment.symbol);
 
+          // Interpolate data ke 30 hari penuh
+          const interpolatedData = interpolateHistoricalData(historicalData);
+
           // Analyze real data
           const priceAnalysis = analyzePriceMovement(
-            historicalData.map((p) => ({ close: p.close }))
+            interpolatedData.map((p) => ({ close: p.close }))
           );
 
-          const currentPrice = historicalData[historicalData.length - 1].close;
+          const currentPrice =
+            interpolatedData[interpolatedData.length - 1].close;
 
           // Generate forecast based on CAGR
           const forecast = generateForecastData(
@@ -154,7 +164,7 @@ export function InvestmentCharts({
             expectedPrice: priceAnalysis.forecastedPrice30Days,
             expectedReturn: priceAnalysis.annualizedReturn,
             riskLevel: investment.riskLevel,
-            historicalData,
+            historicalData: interpolatedData,
             forecastData: forecast,
             color: investment.color,
             description: investment.description,
@@ -213,6 +223,23 @@ export function InvestmentCharts({
     }
   }, [selectedRiskProfile, investments]);
 
+  const calculateDynamicDomain = (data: any[], priceKey: string) => {
+    if (data.length === 0) return ["dataMin", "dataMax"];
+
+    const prices = data.map((d) => d[priceKey]);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min;
+
+    // Gunakan 15% padding dari range untuk lebih strech
+    const padding = range * 0.15;
+
+    return [
+      Math.floor((min - padding) * 100) / 100,
+      Math.ceil((max + padding) * 100) / 100,
+    ];
+  };
+
   const ForecastChart = ({ data, color }: { data: any[]; color: string }) => {
     return (
       <ResponsiveContainer width="100%" height={200}>
@@ -228,7 +255,7 @@ export function InvestmentCharts({
           />
           <YAxis
             tick={{ fontSize: 11, fill: "#d1d5db" }}
-            domain={["dataMin - 100", "dataMax + 100"]}
+            domain={calculateDynamicDomain(data, "price")}
           />
           <Tooltip
             contentStyle={{
@@ -276,7 +303,7 @@ export function InvestmentCharts({
           />
           <YAxis
             tick={{ fontSize: 11, fill: "#d1d5db" }}
-            domain={["dataMin - 100", "dataMax + 100"]}
+            domain={calculateDynamicDomain(data, "close")}
           />
           <Tooltip
             contentStyle={{
@@ -445,12 +472,26 @@ export function InvestmentCharts({
                 </div>
                 <div className="text-right">
                   <div
-                    className="flex items-center gap-1"
-                    style={{ color: "#70e000" }}
+                    className="flex items-center gap-1 justify-end"
+                    style={{
+                      color:
+                        (investment.priceAnalysis?.monthlyReturn ||
+                          investment.expectedReturn) >= 0
+                          ? "#70e000"
+                          : "#ef4444",
+                    }}
                   >
-                    <ArrowUpRight className="w-5 h-5" />
+                    {(investment.priceAnalysis?.monthlyReturn ||
+                      investment.expectedReturn) >= 0 ? (
+                      <ArrowUpRight className="w-5 h-5" />
+                    ) : (
+                      <ArrowDownRight className="w-5 h-5" />
+                    )}
                     <span className="text-2xl">
-                      +
+                      {(investment.priceAnalysis?.monthlyReturn ||
+                        investment.expectedReturn) >= 0
+                        ? "+"
+                        : ""}
                       {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
                         investment.expectedReturn.toFixed(1)}
                       %
