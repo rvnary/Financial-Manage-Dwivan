@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -11,7 +11,7 @@ import {
 } from "./ui/card";
 import { InvestmentRecommendations } from "./InvestmentRecommendations";
 import { InvestmentCharts } from "./InvestmentChartsNew";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 
 interface FinancialPlannerProps {
   onBack: () => void;
@@ -54,6 +54,35 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [stockReturns, setStockReturns] = useState<
     Array<{ symbol: string; monthlyReturn: number }>
   >([]);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const formContentRef = useRef<HTMLDivElement>(null);
+
+  // Handle scroll indicator visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      if (formContentRef.current) {
+        const element = formContentRef.current;
+        const isScrollable = element.scrollHeight > element.clientHeight;
+        const isAtBottom =
+          element.scrollTop + element.clientHeight >= element.scrollHeight - 10;
+
+        setShowScrollIndicator(isScrollable && !isAtBottom);
+      }
+    };
+
+    const element = formContentRef.current;
+    if (element) {
+      element.addEventListener("scroll", handleScroll);
+      // Check initial state
+      handleScroll();
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [showResults]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     // Only keep digits
@@ -111,7 +140,10 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   recommendations
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent
+                ref={formContentRef}
+                className="relative max-h-[calc(100vh-200px)] overflow-y-auto"
+              >
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="salary" className="text-gray-300">
@@ -234,6 +266,21 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                     </Button>
                   </div>
                 </form>
+
+                {/* Scroll Indicator */}
+                {showScrollIndicator && (
+                  <div className="sticky bottom-0 left-0 right-0 flex justify-center pt-4 pb-2 bg-gradient-to-t from-gray-800 to-transparent">
+                    <div
+                      className="flex flex-col items-center gap-1 animate-bounce"
+                      style={{ color: "#70e000" }}
+                    >
+                      <span className="text-xs font-medium">
+                        Scroll untuk lebih
+                      </span>
+                      <ChevronDown className="w-5 h-5" />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
