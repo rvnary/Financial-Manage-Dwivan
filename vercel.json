@@ -1,9 +1,10 @@
 {
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
-    {
-      "source": "/api/yahoo/:path*",
-      "destination": "/api/yahoo/:path*"
-    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
