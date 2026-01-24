@@ -308,7 +308,11 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
           {/* Tabbed Sections - Only show after calculation */}
           {showResults && (
             <div className="mt-8">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
                 <TabsList className="grid w-full grid-cols-5 bg-gray-800 border border-gray-700">
                   <TabsTrigger
                     value="dashboard"
@@ -361,7 +365,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
                 {/* Investment Charts Tab - Always render but show/hide with CSS for caching */}
                 <TabsContent value="investments" className="mt-6" forceMount>
-                  <div className={activeTab === "investments" ? "block" : "hidden"}>
+                  <div
+                    className={activeTab === "investments" ? "block" : "hidden"}
+                  >
                     {remainingMoney > 0 ? (
                       <InvestmentCharts
                         remainingMoney={remainingMoney}

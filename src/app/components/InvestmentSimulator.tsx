@@ -38,10 +38,10 @@ export function InvestmentSimulator({
 
   const formatIDR = (value: number) => {
     if (value >= 1000000000) {
-      return `Rp ${(value / 1000000000).toFixed(1)}M`;
+      return `Rp ${(value / 1000000000).toFixed(2)} Miliar`;
     }
     if (value >= 1000000) {
-      return `Rp ${(value / 1000000).toFixed(1)}Jt`;
+      return `Rp ${(value / 1000000).toFixed(1)} Juta`;
     }
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
