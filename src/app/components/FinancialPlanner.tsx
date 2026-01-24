@@ -74,6 +74,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
     "conservative" | "balanced" | "aggressive"
   >("balanced");
 
+  // Track active tab to control InvestmentCharts visibility
+  const [activeTab, setActiveTab] = useState("dashboard");
+
   // Handle scroll indicator visibility
   useEffect(() => {
     const handleScroll = () => {
@@ -305,7 +308,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
           {/* Tabbed Sections - Only show after calculation */}
           {showResults && (
             <div className="mt-8">
-              <Tabs defaultValue="dashboard" className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-5 bg-gray-800 border border-gray-700">
                   <TabsTrigger
                     value="dashboard"
@@ -356,29 +359,31 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   />
                 </TabsContent>
 
-                {/* Investment Charts Tab */}
-                <TabsContent value="investments" className="mt-6">
-                  {remainingMoney > 0 ? (
-                    <InvestmentCharts
-                      remainingMoney={remainingMoney}
-                      onStockReturnsChange={setStockReturns}
-                      selectedRiskProfile={selectedRiskProfile}
-                      onRiskProfileChange={setSelectedRiskProfile}
-                    />
-                  ) : (
-                    <Card className="bg-gray-800 border-gray-700">
-                      <CardContent className="py-12 text-center">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                        <p className="text-gray-400">
-                          No money available for investment
-                        </p>
-                        <p className="text-gray-500 text-sm mt-2">
-                          Adjust your budget to have remaining money for
-                          investments
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+                {/* Investment Charts Tab - Always render but show/hide with CSS for caching */}
+                <TabsContent value="investments" className="mt-6" forceMount>
+                  <div className={activeTab === "investments" ? "block" : "hidden"}>
+                    {remainingMoney > 0 ? (
+                      <InvestmentCharts
+                        remainingMoney={remainingMoney}
+                        onStockReturnsChange={setStockReturns}
+                        selectedRiskProfile={selectedRiskProfile}
+                        onRiskProfileChange={setSelectedRiskProfile}
+                      />
+                    ) : (
+                      <Card className="bg-gray-800 border-gray-700">
+                        <CardContent className="py-12 text-center">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                          <p className="text-gray-400">
+                            No money available for investment
+                          </p>
+                          <p className="text-gray-500 text-sm mt-2">
+                            Adjust your budget to have remaining money for
+                            investments
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </TabsContent>
 
                 {/* Savings Goals Tab */}
