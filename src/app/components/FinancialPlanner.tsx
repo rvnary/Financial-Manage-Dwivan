@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { InvestmentRecommendations } from "./InvestmentRecommendations";
 import { InvestmentCharts } from "./InvestmentChartsNew";
 import { FinancialDashboard } from "./FinancialDashboard";
-import { SavingsGoals } from "./SavingsGoals";
 import { InvestmentSimulator } from "./InvestmentSimulator";
 import {
   ArrowLeft,
@@ -21,7 +20,6 @@ import {
   LayoutDashboard,
   PieChart,
   TrendingUp,
-  Target,
   Calculator,
 } from "lucide-react";
 
@@ -313,7 +311,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-5 bg-gray-800 border border-gray-700">
+                <TabsList className="grid w-full grid-cols-4 bg-gray-800 border border-gray-700">
                   <TabsTrigger
                     value="dashboard"
                     className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
@@ -327,13 +325,6 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   >
                     <TrendingUp className="w-4 h-4 mr-2" />
                     Investments
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="goals"
-                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Goals
                   </TabsTrigger>
                   <TabsTrigger
                     value="simulator"
@@ -390,14 +381,6 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                       </Card>
                     )}
                   </div>
-                </TabsContent>
-
-                {/* Savings Goals Tab */}
-                <TabsContent value="goals" className="mt-6">
-                  <SavingsGoals
-                    monthlySavings={parseIDR(formData.savings)}
-                    remainingMoney={remainingMoney}
-                  />
                 </TabsContent>
 
                 {/* Investment Simulator Tab */}
