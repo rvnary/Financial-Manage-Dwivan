@@ -57,6 +57,11 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const formContentRef = useRef<HTMLDivElement>(null);
 
+  // Shared risk profile state - synced between InvestmentRecommendations and InvestmentCharts
+  const [selectedRiskProfile, setSelectedRiskProfile] = useState<
+    "conservative" | "balanced" | "aggressive"
+  >("balanced");
+
   // Handle scroll indicator visibility
   useEffect(() => {
     const handleScroll = () => {
@@ -291,6 +296,8 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   remainingMoney={remainingMoney}
                   monthlySalary={parseIDR(formData.monthlySalary)}
                   stockReturns={stockReturns}
+                  selectedRiskProfile={selectedRiskProfile}
+                  onRiskProfileChange={setSelectedRiskProfile}
                 />
               )}
             </div>
@@ -302,6 +309,8 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
               <InvestmentCharts
                 remainingMoney={remainingMoney}
                 onStockReturnsChange={setStockReturns}
+                selectedRiskProfile={selectedRiskProfile}
+                onRiskProfileChange={setSelectedRiskProfile}
               />
             </div>
           )}

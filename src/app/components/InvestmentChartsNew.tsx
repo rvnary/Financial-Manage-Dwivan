@@ -26,9 +26,9 @@ import {
   Loader2,
 } from "lucide-react";
 import {
-  fetchAlphaVantageData,
-  isAlphaVantageConfigured,
-} from "../utils/alphaVantageApi";
+  fetchYahooFinanceData,
+  isYahooFinanceConfigured,
+} from "../utils/yahooFinanceApi";
 import {
   analyzePriceMovement,
   generateForecastData,
@@ -46,7 +46,11 @@ import {
 interface InvestmentChartsProps {
   remainingMoney: number;
   onStockReturnsChange?: (
-    returns: Array<{ symbol: string; monthlyReturn: number }>
+    returns: Array<{ symbol: string; monthlyReturn: number }>,
+  ) => void;
+  selectedRiskProfile?: "conservative" | "balanced" | "aggressive";
+  onRiskProfileChange?: (
+    profile: "conservative" | "balanced" | "aggressive",
   ) => void;
 }
 
@@ -77,6 +81,8 @@ interface InvestmentOption {
 export function InvestmentCharts({
   remainingMoney,
   onStockReturnsChange,
+  selectedRiskProfile: externalRiskProfile,
+  onRiskProfileChange,
 }: InvestmentChartsProps) {
   const [investments, setInvestments] = useState<InvestmentOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,128 +90,347 @@ export function InvestmentCharts({
   const [portfolioAllocations, setPortfolioAllocations] = useState<
     AllocationRecommendation[]
   >([]);
-  const [selectedRiskProfile, setSelectedRiskProfile] = useState<
+  // Use external state if provided, otherwise use internal state
+  const [internalRiskProfile, setInternalRiskProfile] = useState<
     "conservative" | "balanced" | "aggressive"
   >("balanced");
+
+  const selectedRiskProfile = externalRiskProfile ?? internalRiskProfile;
+  const setSelectedRiskProfile = onRiskProfileChange ?? setInternalRiskProfile;
+
   const [portfolioReturn, setPortfolioReturn] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState<string>("");
+  const [allDataLoaded, setAllDataLoaded] = useState(false);
 
-  // Investment symbols to fetch from API
-  const defaultInvestments = [
-    {
-      symbol: "SPY",
-      name: "S&P 500 Index Fund (SPY)",
-      basePrice: 610,
-      color: "#007200",
-      description:
-        "Diversified index fund tracking the 500 largest US companies",
-      riskLevel: "Low" as const,
-    },
-    {
-      symbol: "JNJ",
-      name: "Johnson & Johnson (JNJ)",
-      basePrice: 160,
-      color: "#1e40af",
-      description: "Diversified healthcare leader with stable dividends",
-      riskLevel: "Low" as const,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple (AAPL)",
-      basePrice: 250,
-      color: "#38b000",
-      description: "Technology innovator with high growth potential",
-      riskLevel: "High" as const,
-    },
-  ];
+  // Cache for loaded investments by profile to avoid re-fetching
+  const [investmentCache, setInvestmentCache] = useState<
+    Record<string, InvestmentOption[]>
+  >({});
 
+  // All stock definitions organized by risk profile
+  // Using 3 stocks per profile to minimize API calls (Alpha Vantage: 5 calls/min)
+  // These are well-known US stocks that work reliably with Alpha Vantage
+  const allStockDefinitions: Record<
+    string,
+    {
+      symbol: string;
+      name: string;
+      basePrice: number;
+      color: string;
+      description: string;
+      riskLevel: "Low" | "Medium" | "High";
+    }[]
+  > = {
+    // Low Risk Portfolio: Stable, defensive stocks
+    low: [
+      {
+        symbol: "SPY",
+        name: "S&P 500 ETF (SPY)",
+        basePrice: 600,
+        color: "#007200",
+        description: "Diversified index tracking 500 largest US companies",
+        riskLevel: "Low",
+      },
+      {
+        symbol: "JNJ",
+        name: "Johnson & Johnson (JNJ)",
+        basePrice: 160,
+        color: "#dc2626",
+        description: "Healthcare leader with 60+ years of dividends",
+        riskLevel: "Low",
+      },
+      {
+        symbol: "KO",
+        name: "Coca-Cola (KO)",
+        basePrice: 62,
+        color: "#1e40af",
+        description: "Defensive consumer brand with stable dividends",
+        riskLevel: "Low",
+      },
+    ],
+    // Medium Risk Portfolio: Balanced growth
+    medium: [
+      {
+        symbol: "SPY",
+        name: "S&P 500 ETF (SPY)",
+        basePrice: 600,
+        color: "#007200",
+        description: "Diversified index tracking 500 largest US companies",
+        riskLevel: "Low",
+      },
+      {
+        symbol: "MSFT",
+        name: "Microsoft (MSFT)",
+        basePrice: 420,
+        color: "#0078d4",
+        description: "Quality tech company with stable growth",
+        riskLevel: "Medium",
+      },
+      {
+        symbol: "AAPL",
+        name: "Apple (AAPL)",
+        basePrice: 250,
+        color: "#a3a3a3",
+        description: "Technology ecosystem with strong earnings",
+        riskLevel: "Medium",
+      },
+    ],
+    // High Risk Portfolio: High-growth tech stocks
+    high: [
+      {
+        symbol: "NVDA",
+        name: "NVIDIA (NVDA)",
+        basePrice: 140,
+        color: "#76b900",
+        description: "AI and GPU market leader with explosive growth",
+        riskLevel: "High",
+      },
+      {
+        symbol: "TSLA",
+        name: "Tesla (TSLA)",
+        basePrice: 400,
+        color: "#dc2626",
+        description: "EV and energy innovation with high volatility",
+        riskLevel: "High",
+      },
+      {
+        symbol: "AAPL",
+        name: "Apple (AAPL)",
+        basePrice: 250,
+        color: "#a3a3a3",
+        description: "Technology ecosystem with strong brand loyalty",
+        riskLevel: "High",
+      },
+    ],
+  };
+
+  // Get current profile's stocks
+  const getCurrentProfileStocks = () => {
+    const profileMap: Record<string, string> = {
+      conservative: "low",
+      balanced: "medium",
+      aggressive: "high",
+    };
+    return (
+      allStockDefinitions[profileMap[selectedRiskProfile]] ||
+      allStockDefinitions.medium
+    );
+  };
+
+  // Load ALL data for ALL profiles at startup - only once
   useEffect(() => {
-    const loadInvestmentData = async () => {
+    const loadAllProfilesData = async () => {
+      // Skip if already loaded
+      if (allDataLoaded) return;
+
       setLoading(true);
       setError(null);
 
-      // Check if API is configured
-      if (!isAlphaVantageConfigured()) {
+      // Yahoo Finance API - FREE real-time data, no API key needed!
+      if (!isYahooFinanceConfigured()) {
+        setError("Yahoo Finance API is not available");
+        setLoading(false);
+        return;
+      }
+
+      // Small delay between requests to be polite to the API
+      const delay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+
+      // Collect all unique stocks from all profiles
+      const allProfiles = ["low", "medium", "high"] as const;
+      const profileNameMap: Record<string, string> = {
+        low: "Low Risk",
+        medium: "Medium Risk",
+        high: "High Risk",
+      };
+
+      // Track all loaded data by symbol to avoid duplicate API calls
+      const loadedStockData: Record<string, InvestmentOption> = {};
+      const newCache: Record<string, InvestmentOption[]> = {};
+      const failedSymbols: string[] = [];
+      let totalStocks = 0;
+      let loadedCount = 0;
+
+      // Count total unique stocks
+      const allSymbols = new Set<string>();
+      for (const profile of allProfiles) {
+        for (const stock of allStockDefinitions[profile]) {
+          allSymbols.add(stock.symbol);
+        }
+      }
+      totalStocks = allSymbols.size;
+
+      // Load each unique stock once
+      const symbolsArray = Array.from(allSymbols);
+      for (let i = 0; i < symbolsArray.length; i++) {
+        const symbol = symbolsArray[i];
+
+        // Find stock definition (from any profile)
+        let stockDef = null;
+        for (const profile of allProfiles) {
+          stockDef = allStockDefinitions[profile].find(
+            (s) => s.symbol === symbol,
+          );
+          if (stockDef) break;
+        }
+        if (!stockDef) continue;
+
+        setLoadingProgress(
+          `Loading ${symbol} (${loadedCount + 1}/${totalStocks})...`,
+        );
+
+        // Small delay between stocks to avoid overwhelming the API
+        if (i > 0) {
+          await delay(500);
+        }
+
+        try {
+          const historicalData = await fetchYahooFinanceData(symbol);
+
+          if (!historicalData || historicalData.length === 0) {
+            throw new Error(`No data returned for ${symbol}`);
+          }
+
+          const interpolatedData = interpolateHistoricalData(historicalData);
+          const priceAnalysis = analyzePriceMovement(
+            interpolatedData.map((p) => ({ close: p.close })),
+          );
+          const currentPrice =
+            interpolatedData[interpolatedData.length - 1].close;
+          const forecast = generateForecastData(
+            currentPrice,
+            priceAnalysis.annualizedCAGR,
+            30,
+          );
+
+          loadedStockData[symbol] = {
+            symbol: stockDef.symbol,
+            name: stockDef.name,
+            currentPrice,
+            expectedPrice: priceAnalysis.forecastedPrice30Days,
+            expectedReturn: priceAnalysis.annualizedReturn,
+            riskLevel: stockDef.riskLevel,
+            historicalData: interpolatedData,
+            forecastData: forecast,
+            color: stockDef.color,
+            description: stockDef.description,
+            priceAnalysis,
+          };
+          loadedCount++;
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          console.error(`Failed to load data for ${symbol}: ${errorMsg}`);
+          failedSymbols.push(symbol);
+        }
+      }
+
+      // Build cache for each profile using loaded stock data
+      for (const profile of allProfiles) {
+        const profileStocks = allStockDefinitions[profile];
+        const profileInvestments: InvestmentOption[] = [];
+
+        for (const stock of profileStocks) {
+          if (loadedStockData[stock.symbol]) {
+            // Clone and update with profile-specific info
+            profileInvestments.push({
+              ...loadedStockData[stock.symbol],
+              name: stock.name,
+              color: stock.color,
+              description: stock.description,
+              riskLevel: stock.riskLevel,
+            });
+          }
+        }
+
+        const profileKey =
+          profile === "low"
+            ? "conservative"
+            : profile === "medium"
+              ? "balanced"
+              : "aggressive";
+        newCache[profileKey] = profileInvestments;
+      }
+
+      if (loadedCount === 0) {
         setError(
-          "Alpha Vantage API key is not configured. Please add VITE_ALPHA_VANTAGE_API_KEY to .env file"
+          `Tidak ada data yang berhasil dimuat. Gagal: ${failedSymbols.join(", ")}`,
         );
         setLoading(false);
         return;
       }
 
-      const loadedInvestments: InvestmentOption[] = [];
-
-      for (const investment of defaultInvestments) {
-        try {
-          // Fetch ONLY from Alpha Vantage API - NO MOCK DATA
-          const historicalData = await fetchAlphaVantageData(investment.symbol);
-
-          // Interpolate data ke 30 hari penuh
-          const interpolatedData = interpolateHistoricalData(historicalData);
-
-          // Analyze real data
-          const priceAnalysis = analyzePriceMovement(
-            interpolatedData.map((p) => ({ close: p.close }))
-          );
-
-          const currentPrice =
-            interpolatedData[interpolatedData.length - 1].close;
-
-          // Generate forecast based on CAGR
-          const forecast = generateForecastData(
-            currentPrice,
-            priceAnalysis.annualizedCAGR,
-            30
-          );
-
-          loadedInvestments.push({
-            symbol: investment.symbol,
-            name: investment.name,
-            currentPrice,
-            expectedPrice: priceAnalysis.forecastedPrice30Days,
-            expectedReturn: priceAnalysis.annualizedReturn,
-            riskLevel: investment.riskLevel,
-            historicalData: interpolatedData,
-            forecastData: forecast,
-            color: investment.color,
-            description: investment.description,
-            priceAnalysis,
-          });
-        } catch (error) {
-          const errorMsg =
-            error instanceof Error ? error.message : String(error);
-          console.error(
-            `Failed to load data for ${investment.symbol}: ${errorMsg}`
-          );
-          // Show error and stop loading
-          setError(
-            `Data tidak tersedia untuk ${investment.symbol}: ${errorMsg}`
-          );
-          setLoading(false);
-          return;
-        }
+      if (failedSymbols.length > 0) {
+        console.warn(
+          `Some symbols failed to load: ${failedSymbols.join(", ")}`,
+        );
       }
 
-      if (loadedInvestments.length === 0) {
-        setError("Tidak ada data investasi yang berhasil dimuat");
-        setLoading(false);
-        return;
-      }
+      // Update cache with all profiles
+      setInvestmentCache(newCache);
+      setAllDataLoaded(true);
 
-      setInvestments(loadedInvestments);
+      // Set current profile's investments
+      setInvestments(newCache[selectedRiskProfile] || []);
       setLoading(false);
+      setLoadingProgress("");
 
-      // Call callback with stock returns
+      // Call callback with ALL stock returns from all profiles
       if (onStockReturnsChange) {
-        const stockReturns = loadedInvestments.map((inv) => ({
-          symbol: inv.symbol,
-          monthlyReturn: inv.priceAnalysis?.monthlyReturn || 0,
-        }));
-        onStockReturnsChange(stockReturns);
+        const allStockReturns: Array<{
+          symbol: string;
+          monthlyReturn: number;
+        }> = [];
+        const addedSymbols = new Set<string>();
+
+        // Collect all unique stocks from all profiles
+        for (const profileKey of Object.keys(newCache)) {
+          for (const inv of newCache[profileKey]) {
+            if (!addedSymbols.has(inv.symbol)) {
+              allStockReturns.push({
+                symbol: inv.symbol,
+                monthlyReturn: inv.priceAnalysis?.monthlyReturn || 0,
+              });
+              addedSymbols.add(inv.symbol);
+            }
+          }
+        }
+        onStockReturnsChange(allStockReturns);
       }
     };
 
-    loadInvestmentData();
-  }, []);
+    loadAllProfilesData();
+  }, []); // Only run once on mount
+
+  // When profile changes, update investments from cache (no API call needed)
+  useEffect(() => {
+    if (allDataLoaded && investmentCache[selectedRiskProfile]) {
+      setInvestments(investmentCache[selectedRiskProfile]);
+
+      // Send ALL stock returns, not just current profile
+      if (onStockReturnsChange) {
+        const allStockReturns: Array<{
+          symbol: string;
+          monthlyReturn: number;
+        }> = [];
+        const addedSymbols = new Set<string>();
+
+        for (const profileKey of Object.keys(investmentCache)) {
+          for (const inv of investmentCache[profileKey]) {
+            if (!addedSymbols.has(inv.symbol)) {
+              allStockReturns.push({
+                symbol: inv.symbol,
+                monthlyReturn: inv.priceAnalysis?.monthlyReturn || 0,
+              });
+              addedSymbols.add(inv.symbol);
+            }
+          }
+        }
+        onStockReturnsChange(allStockReturns);
+      }
+    }
+  }, [selectedRiskProfile, allDataLoaded]);
 
   // Update portfolio allocations when risk profile changes
   useEffect(() => {
@@ -215,9 +440,11 @@ export function InvestmentCharts({
     // Calculate portfolio return based on risk profile and stock returns
     if (investments.length > 0) {
       const stockReturns = investments.map((inv) => inv.expectedReturn);
+      const symbols = investments.map((inv) => inv.symbol);
       const totalReturn = calculatePortfolioReturnByProfile(
         selectedRiskProfile,
-        stockReturns
+        stockReturns,
+        symbols,
       );
       setPortfolioReturn(totalReturn);
     }
@@ -265,23 +492,44 @@ export function InvestmentCharts({
               fontSize: "12px",
               color: "#fff",
             }}
-            formatter={(value: any) => `${formatUSD(value as number)}`}
+            content={({ active, payload, label }) => {
+              if (active && payload && payload.length) {
+                const forecastData = payload.find(
+                  (p: any) => p.name === "forecast",
+                );
+                if (forecastData) {
+                  return (
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg p-2">
+                      <p className="text-white font-medium">{label}</p>
+                      <p className="text-green-400">
+                        Forecast: {formatUSD(forecastData.value as number)}
+                      </p>
+                    </div>
+                  );
+                }
+              }
+              return null;
+            }}
           />
           <Area
-            type="monotone"
+            type="natural"
             dataKey="price"
+            name="area"
             stroke={color}
             fill={color}
             fillOpacity={0.1}
             strokeWidth={2}
+            legendType="none"
           />
           <Line
-            type="monotone"
+            type="natural"
             dataKey="price"
+            name="forecast"
             stroke={color}
             strokeWidth={3}
             dot={false}
             strokeDasharray="5 5"
+            legendType="none"
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -313,22 +561,43 @@ export function InvestmentCharts({
               fontSize: "12px",
               color: "#fff",
             }}
-            formatter={(value: any) => `${formatUSD(value as number)}`}
-          />
-          <Line
-            type="monotone"
-            dataKey="close"
-            stroke={color}
-            strokeWidth={2}
-            dot={false}
+            content={({ active, payload, label }) => {
+              if (active && payload && payload.length) {
+                const priceData = payload.find(
+                  (p: any) => p.name === "priceline",
+                );
+                if (priceData) {
+                  return (
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg p-2">
+                      <p className="text-white font-medium">{label}</p>
+                      <p className="text-green-400">
+                        Price: {formatUSD(priceData.value as number)}
+                      </p>
+                    </div>
+                  );
+                }
+              }
+              return null;
+            }}
           />
           <Area
             type="monotone"
             dataKey="close"
+            name="area"
             stroke={color}
             fill={color}
             fillOpacity={0.1}
             strokeWidth={1}
+            legendType="none"
+          />
+          <Line
+            type="monotone"
+            dataKey="close"
+            name="priceline"
+            stroke={color}
+            strokeWidth={2}
+            dot={false}
+            legendType="none"
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -360,14 +629,25 @@ export function InvestmentCharts({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12">
         <Loader2
-          className="w-8 h-8 animate-spin"
+          className="w-12 h-12 animate-spin"
           style={{ color: "#70e000" }}
         />
-        <span className="ml-2 text-gray-400">
-          Loading investment data from Finnhub API...
+        <span className="text-lg text-white mt-4 font-medium">
+          Memuat Data Real-Time...
         </span>
+        <span className="text-gray-400 mt-2">
+          {loadingProgress || "Connecting to Yahoo Finance..."}
+        </span>
+        <div className="mt-4 bg-gray-800 rounded-lg p-4 max-w-md">
+          <p className="text-sm text-gray-400 text-center">
+            📊 Mengambil data real-time untuk semua profil risiko
+          </p>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Data langsung dari Yahoo Finance
+          </p>
+        </div>
       </div>
     );
   }
@@ -378,9 +658,7 @@ export function InvestmentCharts({
         <h4 className="font-medium text-red-400 mb-2">❌ Error Loading Data</h4>
         <p className="text-red-300 text-sm">{error}</p>
         <p className="text-red-400 text-sm mt-2">
-          Troubleshooting: (1) Check if your Alpha Vantage API key is valid in
-          .env file, (2) Wait 1 minute if you see rate limit error, (3) Verify
-          symbol format is correct (MSFT for US, TSCO.LON for London)
+          Troubleshooting: Try refreshing the page
         </p>
       </div>
     );
@@ -388,46 +666,7 @@ export function InvestmentCharts({
 
   return (
     <div className="space-y-6 mt-8">
-      {/* API Configuration Alert */}
-      {!isAlphaVantageConfigured() && (
-        <div className="bg-orange-950 border border-orange-800 rounded-lg p-4">
-          <h4 className="font-medium text-orange-400 mb-2">
-            ⚠️ Alpha Vantage API Key Not Configured
-          </h4>
-          <p className="text-sm text-orange-300 mb-3">
-            To use real market data, please configure your Alpha Vantage API
-            key:
-          </p>
-          <ol className="text-sm text-orange-300 list-decimal list-inside space-y-1 mb-3">
-            <li>
-              Sign up for free at{" "}
-              <a
-                href="https://www.alphavantage.co"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-orange-200 underline"
-              >
-                https://www.alphavantage.co
-              </a>
-            </li>
-            <li>Get your API key from the dashboard</li>
-            <li>
-              Create a <code className="bg-orange-900 px-1 rounded">.env</code>{" "}
-              file in the project root
-            </li>
-            <li>
-              Add:{" "}
-              <code className="bg-orange-900 px-2 py-1 rounded">
-                VITE_ALPHA_VANTAGE_API_KEY=your_api_key
-              </code>
-            </li>
-            <li>Restart the development server</li>
-          </ol>
-          <p className="text-xs text-orange-400">
-            Free tier: 5 API calls/minute, 500 per day
-          </p>
-        </div>
-      )}
+      {/* Yahoo Finance - FREE real-time data */}
 
       <div className="flex items-center gap-2">
         <TrendingUp className="w-6 h-6" style={{ color: "#70e000" }} />
@@ -436,15 +675,56 @@ export function InvestmentCharts({
       <p className="text-gray-400">
         Based on historical market analysis, here are top investment
         recommendations with expected 30-day returns
-        {isAlphaVantageConfigured() ? (
-          <span className="text-green-400"> (Real-time market data)</span>
-        ) : (
-          <span className="text-orange-400">
-            {" "}
-            (API key not configured - configure Alpha Vantage API key)
-          </span>
-        )}
+        <span className="text-green-400">
+          {" "}
+          (Real-time data from Yahoo Finance ✓)
+        </span>
       </p>
+
+      {/* Risk Profile Selector for Investment Cards */}
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-white font-medium">Select Risk Profile</h3>
+            <p className="text-sm text-gray-400">
+              Choose your investment style to see matching stocks
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {(["conservative", "balanced", "aggressive"] as const).map(
+              (profile) => (
+                <button
+                  key={profile}
+                  onClick={() => setSelectedRiskProfile(profile)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    selectedRiskProfile === profile
+                      ? profile === "conservative"
+                        ? "bg-blue-600 text-white"
+                        : profile === "balanced"
+                          ? "bg-green-600 text-white"
+                          : "bg-red-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {profile === "conservative"
+                    ? "🛡️ Low Risk"
+                    : profile === "balanced"
+                      ? "⚖️ Medium Risk"
+                      : "🚀 High Risk"}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-gray-500">
+          {selectedRiskProfile === "conservative" &&
+            "Low Risk: Index + Defensive - S&P 500 (SPY), Johnson & Johnson (JNJ), Coca-Cola (KO)"}
+          {selectedRiskProfile === "balanced" &&
+            "Medium Risk: Index + Tech - S&P 500 (SPY), Microsoft (MSFT), Apple (AAPL)"}
+          {selectedRiskProfile === "aggressive" &&
+            "High Risk: High-Growth Tech - NVIDIA (NVDA), Tesla (TSLA), Apple (AAPL)"}
+        </div>
+      </div>
 
       {/* Investment Cards */}
       <div className="grid gap-6">
@@ -460,7 +740,7 @@ export function InvestmentCharts({
                     {investment.name}
                     <span
                       className={`text-xs px-2 py-1 rounded-full border ${getRiskBadgeColor(
-                        investment.riskLevel
+                        investment.riskLevel,
                       )}`}
                     >
                       {investment.riskLevel} Risk
@@ -611,8 +891,20 @@ export function InvestmentCharts({
                       <div className="text-xs text-gray-400 mb-1">
                         Return (%)
                       </div>
-                      <div className="font-medium" style={{ color: "#10b981" }}>
-                        +
+                      <div
+                        className="font-medium"
+                        style={{
+                          color:
+                            (investment.priceAnalysis?.monthlyReturn ||
+                              investment.expectedReturn) >= 0
+                              ? "#10b981"
+                              : "#ef4444",
+                        }}
+                      >
+                        {(investment.priceAnalysis?.monthlyReturn ||
+                          investment.expectedReturn) >= 0
+                          ? "+"
+                          : ""}
                         {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
                           investment.expectedReturn.toFixed(1)}
                         %
@@ -622,8 +914,19 @@ export function InvestmentCharts({
                       <div className="text-xs text-gray-400 mb-1">
                         Total Gain (30 days)
                       </div>
-                      <div className="font-medium" style={{ color: "#70e000" }}>
-                        {formatIDR(calculatePotentialReturn(investment))}
+                      <div
+                        className="font-medium"
+                        style={{
+                          color:
+                            calculatePotentialReturn(investment) >= 0
+                              ? "#70e000"
+                              : "#ef4444",
+                        }}
+                      >
+                        {calculatePotentialReturn(investment) >= 0 ? "" : "-"}
+                        {formatIDR(
+                          Math.abs(calculatePotentialReturn(investment)),
+                        )}
                       </div>
                     </div>
                     <div>
@@ -633,7 +936,7 @@ export function InvestmentCharts({
                       <div className="font-medium text-white">
                         {formatIDR(
                           remainingMoney * 0.3 +
-                            calculatePotentialReturn(investment)
+                            calculatePotentialReturn(investment),
                         )}
                       </div>
                     </div>
@@ -652,7 +955,16 @@ export function InvestmentCharts({
                   </span>{" "}
                   Consider investing in {investment.name} with an expected
                   30-day return of{" "}
-                  <span className="font-medium" style={{ color: "#70e000" }}>
+                  <span
+                    className="font-medium"
+                    style={{
+                      color:
+                        (investment.priceAnalysis?.monthlyReturn ||
+                          investment.expectedReturn) >= 0
+                          ? "#70e000"
+                          : "#ef4444",
+                    }}
+                  >
                     {investment.priceAnalysis?.monthlyReturn.toFixed(1) ||
                       investment.expectedReturn.toFixed(1)}
                     %
@@ -698,7 +1010,7 @@ export function InvestmentCharts({
                 >
                   {profile.charAt(0).toUpperCase() + profile.slice(1)}
                 </button>
-              )
+              ),
             )}
           </div>
 
@@ -723,7 +1035,7 @@ export function InvestmentCharts({
                   </div>
                   <div
                     className={`text-xs px-2 py-1 rounded border ${getRiskBadgeColor(
-                      allocation.riskLevel
+                      allocation.riskLevel,
                     )}`}
                   >
                     {allocation.riskLevel}
@@ -748,9 +1060,12 @@ export function InvestmentCharts({
                 </div>
                 <div
                   className="text-2xl font-bold"
-                  style={{ color: "#70e000" }}
+                  style={{
+                    color: portfolioReturn / 12 >= 0 ? "#70e000" : "#ef4444",
+                  }}
                 >
-                  +{(portfolioReturn / 12).toFixed(1)}%
+                  {portfolioReturn / 12 >= 0 ? "+" : ""}
+                  {(portfolioReturn / 12).toFixed(1)}%
                 </div>
               </div>
               <div>
