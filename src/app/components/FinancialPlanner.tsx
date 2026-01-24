@@ -9,9 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { InvestmentRecommendations } from "./InvestmentRecommendations";
 import { InvestmentCharts } from "./InvestmentChartsNew";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { FinancialDashboard } from "./FinancialDashboard";
+import { SavingsGoals } from "./SavingsGoals";
+import { InvestmentSimulator } from "./InvestmentSimulator";
+import {
+  ArrowLeft,
+  ChevronDown,
+  LayoutDashboard,
+  PieChart,
+  TrendingUp,
+  Target,
+  Calculator,
+} from "lucide-react";
 
 interface FinancialPlannerProps {
   onBack: () => void;
@@ -135,7 +147,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
         </Button>
 
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="max-w-2xl mx-auto">
             {/* Form Section */}
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
@@ -288,30 +300,114 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                 )}
               </CardContent>
             </Card>
-
-            {/* Results Section */}
-            <div>
-              {showResults && (
-                <InvestmentRecommendations
-                  remainingMoney={remainingMoney}
-                  monthlySalary={parseIDR(formData.monthlySalary)}
-                  stockReturns={stockReturns}
-                  selectedRiskProfile={selectedRiskProfile}
-                  onRiskProfileChange={setSelectedRiskProfile}
-                />
-              )}
-            </div>
           </div>
 
-          {/* Investment Charts Section */}
-          {showResults && remainingMoney > 0 && (
+          {/* Tabbed Sections - Only show after calculation */}
+          {showResults && (
             <div className="mt-8">
-              <InvestmentCharts
-                remainingMoney={remainingMoney}
-                onStockReturnsChange={setStockReturns}
-                selectedRiskProfile={selectedRiskProfile}
-                onRiskProfileChange={setSelectedRiskProfile}
-              />
+              <Tabs defaultValue="dashboard" className="w-full">
+                <TabsList className="grid w-full grid-cols-5 bg-gray-800 border border-gray-700">
+                  <TabsTrigger
+                    value="dashboard"
+                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                  >
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="investments"
+                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Investments
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="goals"
+                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                  >
+                    <Target className="w-4 h-4 mr-2" />
+                    Goals
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="simulator"
+                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Simulator
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="portfolio"
+                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                  >
+                    <PieChart className="w-4 h-4 mr-2" />
+                    Portfolio
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Dashboard Tab */}
+                <TabsContent value="dashboard" className="mt-6">
+                  <FinancialDashboard
+                    monthlySalary={parseIDR(formData.monthlySalary)}
+                    primaryExpenses={parseIDR(formData.primaryExpenses)}
+                    secondaryExpenses={parseIDR(formData.secondaryExpenses)}
+                    savings={parseIDR(formData.savings)}
+                    pocketMoney={parseIDR(formData.pocketMoney)}
+                    remainingMoney={remainingMoney}
+                  />
+                </TabsContent>
+
+                {/* Investment Charts Tab */}
+                <TabsContent value="investments" className="mt-6">
+                  {remainingMoney > 0 ? (
+                    <InvestmentCharts
+                      remainingMoney={remainingMoney}
+                      onStockReturnsChange={setStockReturns}
+                      selectedRiskProfile={selectedRiskProfile}
+                      onRiskProfileChange={setSelectedRiskProfile}
+                    />
+                  ) : (
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="py-12 text-center">
+                        <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                        <p className="text-gray-400">
+                          No money available for investment
+                        </p>
+                        <p className="text-gray-500 text-sm mt-2">
+                          Adjust your budget to have remaining money for
+                          investments
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                {/* Savings Goals Tab */}
+                <TabsContent value="goals" className="mt-6">
+                  <SavingsGoals
+                    monthlySavings={parseIDR(formData.savings)}
+                    remainingMoney={remainingMoney}
+                  />
+                </TabsContent>
+
+                {/* Investment Simulator Tab */}
+                <TabsContent value="simulator" className="mt-6">
+                  <InvestmentSimulator
+                    initialInvestment={Math.max(0, remainingMoney)}
+                    monthlyContribution={Math.max(0, remainingMoney)}
+                  />
+                </TabsContent>
+
+                {/* Portfolio Analysis Tab */}
+                <TabsContent value="portfolio" className="mt-6">
+                  <InvestmentRecommendations
+                    remainingMoney={remainingMoney}
+                    monthlySalary={parseIDR(formData.monthlySalary)}
+                    stockReturns={stockReturns}
+                    selectedRiskProfile={selectedRiskProfile}
+                    onRiskProfileChange={setSelectedRiskProfile}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>
