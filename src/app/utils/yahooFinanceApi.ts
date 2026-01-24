@@ -20,13 +20,13 @@ export function isYahooFinanceConfigured(): boolean {
 
 /**
  * Fetch real-time historical data from Yahoo Finance
- * Uses Vite proxy to bypass CORS in development
+ * Uses Vite proxy in dev, Vercel serverless function in production
  */
 export async function fetchYahooFinanceData(
   symbol: string,
 ): Promise<HistoricalPrice[]> {
-  // Use Vite proxy - requests to /api/yahoo are proxied to Yahoo Finance
-  const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=1d&range=1mo`;
+  // Use simple query param format that works with both Vite proxy and Vercel
+  const url = `/api/yahoo?symbol=${symbol}&interval=1d&range=1mo`;
 
   console.log(`Fetching real-time data for ${symbol} from Yahoo Finance...`);
 
@@ -86,7 +86,7 @@ export async function fetchYahooFinanceData(
  * Get current real-time price from Yahoo Finance
  */
 export async function fetchYahooCurrentPrice(symbol: string): Promise<number> {
-  const url = `/api/yahoo/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+  const url = `/api/yahoo?symbol=${symbol}&interval=1d&range=1d`;
   const response = await fetch(url);
 
   if (!response.ok) {

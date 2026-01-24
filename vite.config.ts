@@ -18,11 +18,18 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Proxy Yahoo Finance API to bypass CORS
+      // Proxy Yahoo Finance API to bypass CORS in development
       "/api/yahoo": {
         target: "https://query1.finance.yahoo.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/yahoo/, ""),
+        rewrite: (path) => {
+          // Parse query params from /api/yahoo?symbol=SPY&interval=1d&range=1mo
+          const url = new URL(path, "http://localhost");
+          const symbol = url.searchParams.get("symbol") || "";
+          const interval = url.searchParams.get("interval") || "1d";
+          const range = url.searchParams.get("range") || "1mo";
+          return `/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+        },
         headers: {
           "User-Agent": "Mozilla/5.0",
         },
