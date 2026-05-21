@@ -124,7 +124,7 @@ export function InvestmentSimulator({
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Calculator className="w-5 h-5" style={{ color: "#70e000" }} />
-          Investment Simulator
+          Simulator Investasi
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -134,9 +134,9 @@ export function InvestmentSimulator({
             <div className="flex items-center justify-between">
               <Label className="text-gray-300 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Investment Period
+                Periode Investasi
               </Label>
-              <span className="text-white font-medium">{years} years</span>
+              <span className="text-white font-medium">{years} tahun</span>
             </div>
             <Slider
               value={[years]}
@@ -152,7 +152,7 @@ export function InvestmentSimulator({
             <div className="flex items-center justify-between">
               <Label className="text-gray-300 flex items-center gap-2">
                 <Percent className="w-4 h-4" />
-                Annual Return
+                Return Tahunan
               </Label>
               <span className="text-white font-medium">{annualReturn}%</span>
             </div>
@@ -170,7 +170,7 @@ export function InvestmentSimulator({
             <div className="flex items-center justify-between">
               <Label className="text-gray-300 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Inflation Rate
+                Tingkat Inflasi
               </Label>
               <span className="text-white font-medium">{inflationRate}%</span>
             </div>
@@ -188,25 +188,25 @@ export function InvestmentSimulator({
         {/* Results Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-900 rounded-lg p-4">
-            <p className="text-xs text-gray-400">Total Contributed</p>
+            <p className="text-xs text-gray-400">Total Setoran</p>
             <p className="text-lg font-bold text-white">
               {formatIDR(totalContributed)}
             </p>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
-            <p className="text-xs text-gray-400">Final Value (Nominal)</p>
+            <p className="text-xs text-gray-400">Nilai Akhir (Nominal)</p>
             <p className="text-lg font-bold" style={{ color: "#70e000" }}>
               {formatIDR(nominalFinalValue)}
             </p>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
-            <p className="text-xs text-gray-400">Final Value (Real)</p>
+            <p className="text-xs text-gray-400">Nilai Akhir (Riil)</p>
             <p className="text-lg font-bold text-blue-400">
               {formatIDR(realFinalValue)}
             </p>
           </div>
           <div className="bg-gray-900 rounded-lg p-4">
-            <p className="text-xs text-gray-400">Total Gain</p>
+            <p className="text-xs text-gray-400">Total Keuntungan</p>
             <p className="text-lg font-bold text-green-400">
               +{formatIDR(totalGain)} ({gainPercentage}%)
             </p>
@@ -215,7 +215,7 @@ export function InvestmentSimulator({
 
         {/* Growth Chart */}
         <div className="bg-gray-900 rounded-lg p-4">
-          <h4 className="text-white font-medium mb-4">Projected Growth</h4>
+          <h4 className="text-white font-medium mb-4">Proyeksi Pertumbuhan</h4>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
@@ -226,7 +226,7 @@ export function InvestmentSimulator({
                 <XAxis
                   dataKey="year"
                   tick={{ fontSize: 12, fill: "#9ca3af" }}
-                  tickFormatter={(v) => `Year ${v}`}
+                  tickFormatter={(v) => `Tahun ${v}`}
                 />
                 <YAxis
                   tick={{ fontSize: 12, fill: "#9ca3af" }}
@@ -241,21 +241,21 @@ export function InvestmentSimulator({
                   }}
                   formatter={(value: number, name: string) => {
                     const labels: Record<string, string> = {
-                      nominal: "Nominal Value",
-                      real: "Real Value (Inflation Adjusted)",
-                      contributed: "Total Contributed",
+                      nominal: "Nilai Nominal",
+                      real: "Nilai Riil (setelah inflasi)",
+                      contributed: "Total Setoran",
                     };
                     return [formatFullIDR(value), labels[name] || name];
                   }}
-                  labelFormatter={(label) => `Year ${label}`}
+                  labelFormatter={(label) => `Tahun ${label}`}
                 />
                 <Legend
                   wrapperStyle={{ color: "#9ca3af" }}
                   formatter={(value) => {
                     const labels: Record<string, string> = {
-                      nominal: "Nominal Value",
-                      real: "Real Value",
-                      contributed: "Contributed",
+                      nominal: "Nilai Nominal",
+                      real: "Nilai Riil",
+                      contributed: "Setoran",
                     };
                     return labels[value] || value;
                   }}
@@ -291,27 +291,28 @@ export function InvestmentSimulator({
         <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-800 rounded-lg p-4">
           <h4 className="text-white font-medium mb-2 flex items-center gap-2">
             <DollarSign className="w-5 h-5" style={{ color: "#70e000" }} />
-            Passive Income Potential
+            Potensi Pendapatan Pasif
           </h4>
           <p className="text-gray-400 text-sm mb-3">
-            If you invest your final portfolio at {annualReturn}% annual return:
+            Jika portofolio akhir terus menghasilkan return tahunan{" "}
+            {annualReturn}%:
           </p>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold" style={{ color: "#70e000" }}>
               {formatFullIDR(Math.round(monthlyPassiveIncome))}
             </span>
-            <span className="text-gray-400">/ month</span>
+            <span className="text-gray-400">/ bulan</span>
           </div>
           <p className="text-gray-500 text-xs mt-2">
-            This is the potential passive income without touching your principal
+            Estimasi pendapatan pasif tanpa menarik pokok investasi.
           </p>
         </div>
 
         {/* Investment Info */}
         <div className="text-xs text-gray-500 space-y-1">
-          <p>💡 Initial Investment: {formatFullIDR(initialInvestment)}</p>
-          <p>💡 Monthly Contribution: {formatFullIDR(monthlyContribution)}</p>
-          <p>⚠️ This is a simulation only. Actual returns may vary.</p>
+          <p>Investasi awal: {formatFullIDR(initialInvestment)}</p>
+          <p>Kontribusi bulanan: {formatFullIDR(monthlyContribution)}</p>
+          <p>Simulasi edukatif saja. Return aktual dapat berbeda.</p>
         </div>
       </CardContent>
     </Card>

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Scale,
   Rocket,
+  Lightbulb,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -117,8 +118,8 @@ export function InvestmentRecommendations({
   const allocationOptions: AllocationOption[] = [
     {
       profile: "low",
-      label: "Conservative",
-      description: "Index core + defensive dividend stocks",
+      label: "Konservatif",
+      description: "Indeks inti + saham dividen defensif",
       thesis:
         "Prioritasnya menjaga modal tetap stabil sebelum mengejar return besar.",
       bestFor:
@@ -151,16 +152,16 @@ export function InvestmentRecommendations({
     },
     {
       profile: "medium",
-      label: "Balanced",
-      description: "Index core + profitable blue-chip tech",
+      label: "Seimbang",
+      description: "Indeks inti + teknologi mapan profitabel",
       thesis:
         "Profil ini menyeimbangkan stabilitas indeks dengan mesin pertumbuhan dari perusahaan teknologi besar.",
       bestFor:
-        "Cocok untuk investor yang ingin growth, tetapi tetap punya jangkar diversifikasi.",
+        "Cocok untuk investor yang ingin pertumbuhan, tetapi tetap punya jangkar diversifikasi.",
       reason:
         "SPY menjaga eksposur pasar luas, MSFT memberi kualitas pendapatan enterprise/cloud, dan AAPL memberi kekuatan ekosistem serta brand yang konsisten.",
       behavior:
-        "Fluktuasi lebih terasa dari Conservative, namun potensi return lebih menarik untuk akumulasi rutin.",
+        "Fluktuasi lebih terasa dari profil Konservatif, namun potensi return lebih menarik untuk akumulasi rutin.",
       allocations: [
         {
           name: "S&P 500 ETF (SPY)",
@@ -185,14 +186,14 @@ export function InvestmentRecommendations({
     },
     {
       profile: "high",
-      label: "Aggressive",
-      description: "High-conviction growth and innovation stocks",
+      label: "Agresif",
+      description: "Saham pertumbuhan dan inovasi berkeyakinan tinggi",
       thesis:
         "Profil ini mengejar pertumbuhan tinggi dengan menerima risiko drawdown yang lebih besar.",
       bestFor:
         "Cocok untuk horizon panjang, surplus yang tidak dipakai kebutuhan wajib, dan investor yang siap melihat harga naik-turun tajam.",
       reason:
-        "NVDA dipilih untuk eksposur AI/GPU, TSLA untuk inovasi EV/energi dengan volatilitas tinggi, dan AAPL sebagai penyeimbang kualitas dalam basket growth.",
+        "NVDA dipilih untuk eksposur AI/GPU, TSLA untuk inovasi EV/energi dengan volatilitas tinggi, dan AAPL sebagai penyeimbang kualitas dalam basket pertumbuhan.",
       behavior:
         "Potensi naiknya paling besar, tetapi koreksi jangka pendek juga bisa paling agresif.",
       allocations: [
@@ -230,21 +231,21 @@ export function InvestmentRecommendations({
     low: {
       icon: ShieldCheck,
       accent: "#38bdf8",
-      label: "Capital protection",
+      label: "Proteksi modal",
       active:
         "bg-sky-600 border-sky-400 text-white shadow-lg shadow-sky-900/30",
     },
     medium: {
       icon: Scale,
       accent: "#70e000",
-      label: "Risk-return balance",
+      label: "Seimbang risiko-return",
       active:
         "bg-green-600 border-green-500 text-white shadow-lg shadow-green-900/30",
     },
     high: {
       icon: Rocket,
       accent: "#ef4444",
-      label: "Growth acceleration",
+      label: "Akselerasi pertumbuhan",
       active:
         "bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/30",
     },
@@ -279,10 +280,10 @@ export function InvestmentRecommendations({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           <TrendingUp className="w-5 h-5" />
-          Investment Recommendations
+          Rekomendasi Portofolio
         </CardTitle>
         <CardDescription className="text-gray-400">
-          Choose your risk profile and allocate your remaining budget
+          Pilih profil risiko dan lihat alokasi dari sisa dana yang tersedia.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -295,7 +296,7 @@ export function InvestmentRecommendations({
                 : "bg-red-950 border-red-800"
             }`}
           >
-            <div className="text-sm text-gray-400 mb-1">Remaining Money</div>
+            <div className="text-sm text-gray-400 mb-1">Sisa Dana</div>
             <div
               className={`text-3xl font-bold ${
                 hasRemainingMoney ? "text-green-400" : "text-red-400"
@@ -308,8 +309,8 @@ export function InvestmentRecommendations({
                 <AlertCircle className="w-4 h-4" />
                 <span className="text-sm">
                   {remainingMoney < 0
-                    ? "Your expenses exceed your income!"
-                    : "No money available for investment"}
+                    ? "Pengeluaran melebihi pemasukan."
+                    : "Belum ada dana tersedia untuk investasi."}
                 </span>
               </div>
             )}
@@ -320,7 +321,7 @@ export function InvestmentRecommendations({
               {/* Risk Profile Selection */}
               <div>
                 <h4 className="font-medium text-white mb-3">
-                  Select Risk Profile
+                  Pilih Profil Risiko
                 </h4>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   {allocationOptions.map((option) => (
@@ -363,7 +364,7 @@ export function InvestmentRecommendations({
                       {profileVisuals[selectedProfile].label}
                     </p>
                     <h4 className="text-lg font-semibold text-white">
-                      Why {selectedAllocation.label} is included
+                      Alasan profil {selectedAllocation.label} dipilih
                     </h4>
                   </div>
                 </div>
@@ -388,12 +389,12 @@ export function InvestmentRecommendations({
                         }}
                       >
                         {index === 0
-                          ? "Thesis"
+                          ? "Tesis"
                           : index === 1
-                            ? "Reason"
+                            ? "Alasan"
                             : index === 2
-                              ? "Suitable for"
-                              : "Expected behavior"}
+                              ? "Cocok untuk"
+                              : "Perilaku yang diharapkan"}
                       </span>
                       {text}
                     </div>
@@ -403,9 +404,7 @@ export function InvestmentRecommendations({
 
               {/* Pie Chart */}
               <div className="motion-card bg-gray-700/80 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-4">
-                  Allocation Breakdown
-                </h4>
+                <h4 className="font-medium text-white mb-4">Rincian Alokasi</h4>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -454,7 +453,7 @@ export function InvestmentRecommendations({
               {/* Investment Breakdown Details */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-white">Investment Details</h4>
+                  <h4 className="font-medium text-white">Detail Investasi</h4>
                 </div>
 
                 {/* Note if returns data not available for this profile */}
@@ -465,9 +464,9 @@ export function InvestmentRecommendations({
                   if (!hasReturnData && stockReturns.length > 0) {
                     return (
                       <div className="p-3 bg-amber-950 border border-amber-800 rounded-lg text-sm text-amber-300">
-                        ⚠️ Return data untuk profil ini belum dimuat. Pilih
-                        profil yang sama di bagian "Investment Opportunities" di
-                        bawah untuk melihat data return real-time.
+                        Data return untuk profil ini belum dimuat. Pilih profil
+                        yang sama di bagian "Peluang Investasi" untuk melihat
+                        data return langsung.
                       </div>
                     );
                   }
@@ -582,12 +581,12 @@ export function InvestmentRecommendations({
                           })(),
                         }}
                       />
-                      Total Expected Return (30 days)
+                      Estimasi Return Total (30 hari)
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-xs text-gray-400 mb-1">
-                          Weighted Average Return
+                          Return rata-rata tertimbang
                         </div>
                         <div
                           className="text-2xl font-bold"
@@ -620,7 +619,7 @@ export function InvestmentRecommendations({
                       </div>
                       <div>
                         <div className="text-xs text-gray-400 mb-1">
-                          Total Gain in Rupiah
+                          Estimasi gain rupiah
                         </div>
                         <div
                           className="text-2xl font-bold"
@@ -658,7 +657,7 @@ export function InvestmentRecommendations({
                       style={{ borderColor: "#70e00030" }}
                     >
                       <div className="text-xs text-gray-400 mb-1">
-                        Total Portfolio Value After 30 Days
+                        Estimasi nilai portofolio setelah 30 hari
                       </div>
                       <div className="text-2xl font-bold text-white">
                         {(() => {
@@ -685,30 +684,31 @@ export function InvestmentRecommendations({
                   borderColor: "#70e00030",
                 }}
               >
-                <h4 className="mb-2 text-white font-medium">
-                  💡 Investment Tips
+                <h4 className="mb-2 flex items-center gap-2 text-white font-medium">
+                  <Lightbulb className="h-4 w-4 text-green-300" />
+                  Tips Investasi
                 </h4>
                 <ul className="text-sm space-y-1 text-gray-300">
                   <li>
-                    • <strong>Conservative:</strong> SPY, JNJ, KO - disertakan
+                    • <strong>Konservatif:</strong> SPY, JNJ, KO - disertakan
                     untuk menjaga diversifikasi, stabilitas bisnis defensif, dan
                     potensi dividen.
                   </li>
                   <li>
-                    • <strong>Balanced:</strong> SPY, MSFT, AAPL - disertakan
-                    agar portofolio punya indeks luas sekaligus growth dari
-                    blue-chip tech.
+                    • <strong>Seimbang:</strong> SPY, MSFT, AAPL - disertakan
+                    agar portofolio punya indeks luas sekaligus pertumbuhan dari
+                    saham teknologi mapan.
                   </li>
                   <li>
-                    • <strong>Aggressive:</strong> NVDA, TSLA, AAPL - disertakan
+                    • <strong>Agresif:</strong> NVDA, TSLA, AAPL - disertakan
                     untuk mengejar inovasi/pertumbuhan tinggi dengan risiko
                     volatilitas lebih besar.
                   </li>
                   <li>
-                    • Each risk profile has different stocks suited to that risk
-                    level
+                    • Setiap profil punya komposisi saham yang menyesuaikan
+                    tingkat risikonya.
                   </li>
-                  <li>• Review and rebalance your portfolio regularly</li>
+                  <li>• Tinjau dan rebalance portofolio secara berkala.</li>
                 </ul>
               </div>
             </>
@@ -717,13 +717,15 @@ export function InvestmentRecommendations({
           {!hasRemainingMoney && remainingMoney < 0 && (
             <div className="bg-amber-950 border border-amber-800 rounded-lg p-4">
               <h4 className="font-medium text-amber-400 mb-2">
-                ⚠️ Budget Adjustment Needed
+                Budget Perlu Disesuaikan
               </h4>
               <ul className="text-sm text-amber-300 space-y-1">
-                <li>• Review your expenses and identify areas to cut back</li>
-                <li>• Prioritize essential expenses over non-essential ones</li>
-                <li>• Look for opportunities to increase your income</li>
-                <li>• Consider creating a debt repayment plan</li>
+                <li>• Tinjau pengeluaran dan cari pos yang bisa dikurangi.</li>
+                <li>
+                  • Prioritaskan kebutuhan wajib sebelum pengeluaran hiburan.
+                </li>
+                <li>• Cari peluang menambah pemasukan.</li>
+                <li>• Buat rencana pelunasan utang jika ada cicilan aktif.</li>
               </ul>
             </div>
           )}

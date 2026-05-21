@@ -16,6 +16,8 @@ import {
   PieChart,
   TrendingUp,
   Calculator,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
 const FinancialDashboard = lazy(() =>
@@ -58,6 +60,11 @@ interface FormData {
 
 const STORAGE_KEY = "dwivan-financial-planner";
 
+// Maximum digits allowed for any nominal input (12 digits = up to ~999 triliun)
+const MAX_DIGITS = 12;
+// Maximum reasonable nominal value (1 triliun rupiah)
+const MAX_AMOUNT = 1_000_000_000_000;
+
 const defaultFormData: FormData = {
   monthlySalary: "",
   primaryExpenses: "",
@@ -83,12 +90,43 @@ const parseIDR = (value: string): number => {
   return parseInt(value.replace(/\D/g, "")) || 0;
 };
 
+// Sanitize and limit input digits
+const sanitizeNominal = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, MAX_DIGITS);
+  // Hard cap to MAX_AMOUNT
+  if (digits && parseInt(digits) > MAX_AMOUNT) {
+    return MAX_AMOUNT.toString();
+  }
+  return digits;
+};
+
+// Custom validation messages in Indonesian
+const validationMessages: Record<keyof FormData, string> = {
+  monthlySalary: "Gaji bulanan wajib diisi",
+  primaryExpenses: "Pengeluaran utama wajib diisi",
+  secondaryExpenses: "Pengeluaran sekunder wajib diisi",
+  savings: "Nominal tabungan wajib diisi",
+  pocketMoney: "Uang saku/jajan wajib diisi",
+  financialGoal: "",
+  emergencyFund: "",
+};
+
+const handleInvalid =
+  (field: keyof FormData) => (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.currentTarget;
+    target.setCustomValidity(validationMessages[field] || "Wajib diisi");
+  };
+
+const clearCustomValidity = (e: React.FormEvent<HTMLInputElement>) => {
+  e.currentTarget.setCustomValidity("");
+};
+
 function TabLoadingState({ label }: { label: string }) {
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardContent className="py-12 text-center">
         <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-gray-700 border-t-green-400" />
-        <p className="text-gray-300">Loading {label}...</p>
+        <p className="text-gray-300">Memuat {label}...</p>
       </CardContent>
     </Card>
   );
@@ -111,7 +149,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [stockReturns, setStockReturns] = useState<
     Array<{ symbol: string; monthlyReturn: number }>
   >([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Shared risk profile state - synced between InvestmentRecommendations and InvestmentCharts
   const [selectedRiskProfile, setSelectedRiskProfile] = useState<
@@ -126,9 +166,16 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   }, [formData]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    // Only keep digits
-    const cleanValue = value.replace(/\D/g, "");
+    const cleanValue = sanitizeNominal(value);
     setFormData((prev) => ({ ...prev, [field]: cleanValue }));
+    // Clear any custom validity on change
+    if (formRef.current) {
+      const input = formRef.current.querySelector<HTMLInputElement>(
+        `[name="${field}"]`,
+      );
+      input?.setCustomValidity("");
+    }
+    setSubmitError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -140,9 +187,19 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
     const savings = parseIDR(formData.savings);
     const pocket = parseIDR(formData.pocketMoney);
 
+    // Validate: total allocations should not exceed salary by extreme amount
+    const totalAllocation = primary + secondary + savings + pocket;
+    if (salary > 0 && totalAllocation > salary) {
+      setSubmitError(
+        `Total alokasi (${formatToIDR(totalAllocation)}) melebihi gaji bulanan (${formatToIDR(salary)}). Silakan sesuaikan.`,
+      );
+      return;
+    }
+
     const remaining = salary - primary - secondary - savings - pocket;
     setRemainingMoney(remaining);
     setShowResults(true);
+    setSubmitError(null);
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -163,12 +220,82 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const savingsRate =
     salary > 0 ? (parseIDR(formData.savings) / salary) * 100 : 0;
 
+  const hasFormData = Object.values(formData).some((v) => v !== "");
+
   const handleReset = () => {
+    if (
+      hasFormData &&
+      !window.confirm(
+        "Yakin ingin mereset semua data? Data yang sudah diisi akan hilang.",
+      )
+    ) {
+      return;
+    }
     setFormData(defaultFormData);
     setShowResults(false);
     setRemainingMoney(0);
+    setSubmitError(null);
     window.localStorage.removeItem(STORAGE_KEY);
   };
+
+  const liveBudgetChecker =
+    salary > 0 ? (
+      <div
+        className={`motion-card sticky top-4 rounded-2xl border p-4 shadow-lg ${
+          isOverBudget
+            ? "border-red-800 bg-red-950/60"
+            : "border-green-800 bg-green-950/40"
+        }`}
+        aria-live="polite"
+      >
+        <div className="flex items-center justify-between gap-4 text-sm">
+          <span className="text-gray-300">Pengecekan budget langsung</span>
+          <span className={isOverBudget ? "text-red-300" : "text-green-300"}>
+            {allocationRate.toFixed(1)}% teralokasi
+          </span>
+        </div>
+        <div
+          className="mt-2 h-2 overflow-hidden rounded-full bg-gray-700"
+          role="progressbar"
+          aria-valuenow={Math.min(100, allocationRate)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className={
+              isOverBudget
+                ? "motion-bar h-full bg-red-500 transition-all duration-700"
+                : "motion-bar h-full bg-green-500 transition-all duration-700"
+            }
+            style={{ width: `${Math.min(100, allocationRate)}%` }}
+          />
+        </div>
+        <p className="mt-2 text-sm text-gray-300">
+          Sisa sementara: {formatToIDR(Math.abs(liveRemaining)) || "Rp 0"}
+          {isOverBudget ? " melebihi budget" : " tersedia"}
+        </p>
+        <div className="mt-4 grid gap-3 text-xs text-gray-300 sm:grid-cols-3">
+          <div className="rounded-lg bg-black/20 p-3">
+            <span className="block text-gray-500">Rasio tabungan</span>
+            <strong className="text-white">{savingsRate.toFixed(1)}%</strong>
+          </div>
+          <div className="rounded-lg bg-black/20 p-3">
+            <span className="block text-gray-500">Teralokasi</span>
+            <strong className="text-white">
+              {formatToIDR(totalAllocated)}
+            </strong>
+          </div>
+          <div className="rounded-lg bg-black/20 p-3">
+            <span className="block text-gray-500">Status</span>
+            <strong
+              className={isOverBudget ? "text-red-300" : "text-green-300"}
+            >
+              {isOverBudget ? "Perlu dikurangi" : "Aman"}
+            </strong>
+          </div>
+        </div>
+      </div>
+    ) : null;
 
   return (
     <div className="motion-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(112,224,0,0.12),transparent_32%),linear-gradient(135deg,#030712,#111827_48%,#020617)] py-8">
@@ -178,259 +305,358 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
           onClick={onBack}
           className="mb-6 hover:bg-gray-800 text-gray-300"
           style={{ color: "#70e000" }}
+          aria-label="Kembali ke beranda"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
+          Kembali ke Beranda
         </Button>
 
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mx-auto">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
             {/* Form Section */}
             <Card className="motion-card motion-glow bg-gray-800/90 border-gray-700 shadow-2xl shadow-black/20 backdrop-blur">
               <CardHeader>
-                <CardTitle className="text-white">Financial Details</CardTitle>
+                <CardTitle className="text-white">Detail Keuangan</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Enter your monthly financial information to get personalized
-                  recommendations
+                  Masukkan informasi keuangan bulanan Anda untuk mendapatkan
+                  rekomendasi yang dipersonalisasi
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative">
                 <form
+                  ref={formRef}
                   onSubmit={handleSubmit}
                   className="motion-stagger space-y-6"
+                  noValidate={false}
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="salary" className="text-gray-300">
-                      Monthly Salary
-                    </Label>
-                    <Input
-                      id="salary"
-                      type="text"
-                      placeholder="0"
-                      value={
-                        formData.monthlySalary
-                          ? formatToIDR(formData.monthlySalary)
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleInputChange("monthlySalary", e.target.value)
-                      }
-                      required
-                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="primary" className="text-gray-300">
-                      Primary Expenses
-                    </Label>
-                    <Input
-                      id="primary"
-                      type="text"
-                      placeholder="0 - Rent, utilities, food, etc."
-                      value={
-                        formData.primaryExpenses
-                          ? formatToIDR(formData.primaryExpenses)
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleInputChange("primaryExpenses", e.target.value)
-                      }
-                      required
-                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="secondary" className="text-gray-300">
-                      Secondary Expenses
-                    </Label>
-                    <Input
-                      id="secondary"
-                      type="text"
-                      placeholder="0 - Entertainment, subscriptions, etc."
-                      value={
-                        formData.secondaryExpenses
-                          ? formatToIDR(formData.secondaryExpenses)
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleInputChange("secondaryExpenses", e.target.value)
-                      }
-                      required
-                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="savings" className="text-gray-300">
-                      Savings
-                    </Label>
-                    <Input
-                      id="savings"
-                      type="text"
-                      placeholder="0 - Monthly savings amount"
-                      value={
-                        formData.savings ? formatToIDR(formData.savings) : ""
-                      }
-                      onChange={(e) =>
-                        handleInputChange("savings", e.target.value)
-                      }
-                      required
-                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pocket" className="text-gray-300">
-                      Pocket Money / Spending Money
-                    </Label>
-                    <Input
-                      id="pocket"
-                      type="text"
-                      placeholder="0 - Personal spending money"
-                      value={
-                        formData.pocketMoney
-                          ? formatToIDR(formData.pocketMoney)
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleInputChange("pocketMoney", e.target.value)
-                      }
-                      required
-                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <section className="rounded-2xl border border-gray-700/80 bg-gray-900/40 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-base text-white">Pemasukan</h3>
+                      <p className="text-sm text-gray-500">
+                        Mulai dari nominal pemasukan bulanan utama.
+                      </p>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="goal" className="text-gray-300">
-                        Financial Goal Target
+                      <Label htmlFor="salary" className="text-gray-300">
+                        Gaji Bulanan
                       </Label>
                       <Input
-                        id="goal"
+                        id="salary"
+                        name="monthlySalary"
                         type="text"
-                        placeholder="0 - Target tabungan/investasi"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        maxLength={20}
+                        placeholder="Contoh: 10.000.000"
                         value={
-                          formData.financialGoal
-                            ? formatToIDR(formData.financialGoal)
+                          formData.monthlySalary
+                            ? formatToIDR(formData.monthlySalary)
                             : ""
                         }
                         onChange={(e) =>
-                          handleInputChange("financialGoal", e.target.value)
+                          handleInputChange("monthlySalary", e.target.value)
                         }
+                        onInvalid={handleInvalid("monthlySalary")}
+                        onInput={clearCustomValidity}
+                        required
+                        aria-required="true"
                         className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                       />
                     </div>
+                  </section>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="emergency" className="text-gray-300">
-                        Current Emergency Fund
-                      </Label>
-                      <Input
-                        id="emergency"
-                        type="text"
-                        placeholder="0 - Dana darurat saat ini"
-                        value={
-                          formData.emergencyFund
-                            ? formatToIDR(formData.emergencyFund)
-                            : ""
-                        }
-                        onChange={(e) =>
-                          handleInputChange("emergencyFund", e.target.value)
-                        }
-                        className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
-                      />
+                  <section className="rounded-2xl border border-gray-700/80 bg-gray-900/40 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-base text-white">
+                        Alokasi bulanan wajib
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Isi pengeluaran dan tabungan yang rutin terjadi.
+                      </p>
                     </div>
-                  </div>
-
-                  {salary > 0 && (
-                    <div
-                      className={`motion-card rounded-2xl border p-4 shadow-lg ${
-                        isOverBudget
-                          ? "border-red-800 bg-red-950/60"
-                          : "border-green-800 bg-green-950/40"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-4 text-sm">
-                        <span className="text-gray-300">Live budget check</span>
-                        <span
-                          className={
-                            isOverBudget ? "text-red-300" : "text-green-300"
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="primary" className="text-gray-300">
+                          Pengeluaran Utama
+                        </Label>
+                        <Input
+                          id="primary"
+                          name="primaryExpenses"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Sewa, listrik, makan, dll."
+                          value={
+                            formData.primaryExpenses
+                              ? formatToIDR(formData.primaryExpenses)
+                              : ""
                           }
-                        >
-                          {allocationRate.toFixed(1)}% allocated
-                        </span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-700">
-                        <div
-                          className={
-                            isOverBudget
-                              ? "motion-bar h-full bg-red-500 transition-all duration-700"
-                              : "motion-bar h-full bg-green-500 transition-all duration-700"
+                          onChange={(e) =>
+                            handleInputChange("primaryExpenses", e.target.value)
                           }
-                          style={{ width: `${Math.min(100, allocationRate)}%` }}
+                          onInvalid={handleInvalid("primaryExpenses")}
+                          onInput={clearCustomValidity}
+                          required
+                          aria-required="true"
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                         />
                       </div>
-                      <p className="mt-2 text-sm text-gray-300">
-                        Sisa sementara:{" "}
-                        {formatToIDR(Math.abs(liveRemaining)) || "Rp 0"}
-                        {isOverBudget ? " over budget" : " tersedia"}
-                      </p>
-                      <div className="mt-4 grid gap-3 text-xs text-gray-300 sm:grid-cols-3">
-                        <div className="rounded-lg bg-black/20 p-3">
-                          <span className="block text-gray-500">
-                            Savings rate
-                          </span>
-                          <strong className="text-white">
-                            {savingsRate.toFixed(1)}%
-                          </strong>
-                        </div>
-                        <div className="rounded-lg bg-black/20 p-3">
-                          <span className="block text-gray-500">Allocated</span>
-                          <strong className="text-white">
-                            {formatToIDR(totalAllocated)}
-                          </strong>
-                        </div>
-                        <div className="rounded-lg bg-black/20 p-3">
-                          <span className="block text-gray-500">Status</span>
-                          <strong
-                            className={
-                              isOverBudget ? "text-red-300" : "text-green-300"
-                            }
-                          >
-                            {isOverBudget ? "Perlu dikurangi" : "Aman"}
-                          </strong>
-                        </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="secondary" className="text-gray-300">
+                          Pengeluaran Sekunder
+                        </Label>
+                        <Input
+                          id="secondary"
+                          name="secondaryExpenses"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Hiburan, langganan, dll."
+                          value={
+                            formData.secondaryExpenses
+                              ? formatToIDR(formData.secondaryExpenses)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleInputChange(
+                              "secondaryExpenses",
+                              e.target.value,
+                            )
+                          }
+                          onInvalid={handleInvalid("secondaryExpenses")}
+                          onInput={clearCustomValidity}
+                          required
+                          aria-required="true"
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
+                        />
                       </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="savings" className="text-gray-300">
+                          Tabungan
+                        </Label>
+                        <Input
+                          id="savings"
+                          name="savings"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Nominal tabungan bulanan"
+                          value={
+                            formData.savings
+                              ? formatToIDR(formData.savings)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleInputChange("savings", e.target.value)
+                          }
+                          onInvalid={handleInvalid("savings")}
+                          onInput={clearCustomValidity}
+                          required
+                          aria-required="true"
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="pocket" className="text-gray-300">
+                          Uang Saku / Jajan
+                        </Label>
+                        <Input
+                          id="pocket"
+                          name="pocketMoney"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Pengeluaran pribadi"
+                          value={
+                            formData.pocketMoney
+                              ? formatToIDR(formData.pocketMoney)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleInputChange("pocketMoney", e.target.value)
+                          }
+                          onInvalid={handleInvalid("pocketMoney")}
+                          onInput={clearCustomValidity}
+                          required
+                          aria-required="true"
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="lg:hidden">{liveBudgetChecker}</div>
+
+                  <section className="rounded-2xl border border-gray-700/80 bg-gray-900/40 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-base text-white">Target tambahan</h3>
+                      <p className="text-sm text-gray-500">
+                        Opsional, tapi membantu dashboard memberi konteks.
+                      </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="goal" className="text-gray-300">
+                          Target Finansial{" "}
+                          <span className="dwivan-badge">Opsional</span>
+                        </Label>
+                        <Input
+                          id="goal"
+                          name="financialGoal"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Target tabungan/investasi"
+                          value={
+                            formData.financialGoal
+                              ? formatToIDR(formData.financialGoal)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleInputChange("financialGoal", e.target.value)
+                          }
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="emergency" className="text-gray-300">
+                          Dana Darurat{" "}
+                          <span className="dwivan-badge">Opsional</span>
+                        </Label>
+                        <Input
+                          id="emergency"
+                          name="emergencyFund"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={20}
+                          placeholder="Dana darurat saat ini"
+                          value={
+                            formData.emergencyFund
+                              ? formatToIDR(formData.emergencyFund)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            handleInputChange("emergencyFund", e.target.value)
+                          }
+                          className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  {submitError && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 rounded-lg border border-red-800 bg-red-950/60 p-3 text-sm text-red-200"
+                    >
+                      <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <span>{submitError}</span>
                     </div>
                   )}
 
-                  <div className="flex gap-4">
-                    <Button
-                      type="submit"
-                      className="flex-1 text-white transition duration-300 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg hover:shadow-green-900/30"
-                      style={{ backgroundColor: "#007200" }}
-                    >
-                      Calculate
-                    </Button>
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleReset}
-                      className="bg-gray-700 border-gray-600 text-gray-300 transition duration-300 hover:-translate-y-0.5 hover:bg-gray-600"
+                      className="bg-gray-700 border-gray-600 text-gray-300 transition duration-300 hover:-translate-y-0.5 hover:bg-gray-600 sm:w-auto"
+                      aria-label="Reset semua data formulir"
                     >
                       Reset
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 text-white transition duration-300 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg hover:shadow-green-900/30"
+                      style={{ backgroundColor: "#007200" }}
+                      aria-label="Hitung dan tampilkan hasil perencanaan"
+                    >
+                      Hitung Sekarang
                     </Button>
                   </div>
                 </form>
               </CardContent>
             </Card>
+
+            <aside className="hidden lg:block">
+              {liveBudgetChecker || (
+                <div className="sticky top-4 rounded-2xl border border-gray-700 bg-gray-900/60 p-4 text-sm text-gray-400 shadow-lg backdrop-blur">
+                  <h3 className="mb-2 text-base text-white">
+                    Pengecekan budget langsung
+                  </h3>
+                  <p>
+                    Isi gaji bulanan untuk melihat sisa dana, rasio tabungan,
+                    dan status budget secara langsung.
+                  </p>
+                </div>
+              )}
+            </aside>
           </div>
 
           {/* Tabbed Sections - Only show after calculation */}
           {showResults && (
             <div ref={resultsRef} className="motion-card mt-8 scroll-mt-6">
+              {/* Result heading and summary */}
+              <div className="mb-6 rounded-2xl border border-green-800/60 bg-green-950/30 p-5 shadow-lg backdrop-blur">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-6 w-6 flex-shrink-0 text-green-400" />
+                  <div className="flex-1">
+                    <h2 className="text-xl text-white">Hasil Perencanaan</h2>
+                    <p className="mt-1 text-sm text-gray-300">
+                      Berikut ringkasan keuangan Anda. Telusuri tab di bawah
+                      untuk melihat dashboard, simulasi, dan rekomendasi
+                      investasi.
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-lg bg-black/30 p-3">
+                        <span className="block text-xs text-gray-500">
+                          Sisa uang
+                        </span>
+                        <strong
+                          className={`text-base ${
+                            remainingMoney < 0
+                              ? "text-red-300"
+                              : "text-green-300"
+                          }`}
+                        >
+                          {formatToIDR(Math.abs(remainingMoney)) || "Rp 0"}
+                          {remainingMoney < 0 ? " (defisit)" : ""}
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-black/30 p-3">
+                        <span className="block text-xs text-gray-500">
+                          Status budget
+                        </span>
+                        <strong
+                          className={`text-base ${
+                            isOverBudget ? "text-red-300" : "text-green-300"
+                          }`}
+                        >
+                          {isOverBudget ? "Perlu dikurangi" : "Aman"}
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-black/30 p-3">
+                        <span className="block text-xs text-gray-500">
+                          Rasio tabungan
+                        </span>
+                        <strong className="text-base text-white">
+                          {savingsRate.toFixed(1)}%
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
@@ -440,6 +666,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   <TabsTrigger
                     value="dashboard"
                     className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
+                    aria-label="Tab Dashboard"
                   >
                     <LayoutDashboard className="w-4 h-4 sm:mr-2" />
                     Dashboard
@@ -447,13 +674,15 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   <TabsTrigger
                     value="investments"
                     className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
+                    aria-label="Tab Investasi"
                   >
                     <TrendingUp className="w-4 h-4 sm:mr-2" />
-                    Investments
+                    Investasi
                   </TabsTrigger>
                   <TabsTrigger
                     value="simulator"
                     className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
+                    aria-label="Tab Simulator"
                   >
                     <Calculator className="w-4 h-4 sm:mr-2" />
                     Simulator
@@ -461,9 +690,10 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   <TabsTrigger
                     value="portfolio"
                     className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
+                    aria-label="Tab Portofolio"
                   >
                     <PieChart className="w-4 h-4 sm:mr-2" />
-                    Portfolio
+                    Portofolio
                   </TabsTrigger>
                 </TabsList>
 
@@ -490,7 +720,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   >
                     {remainingMoney > 0 ? (
                       <Suspense
-                        fallback={<TabLoadingState label="investment data" />}
+                        fallback={<TabLoadingState label="data investasi" />}
                       >
                         <InvestmentCharts
                           remainingMoney={remainingMoney}
@@ -503,13 +733,48 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                       <Card className="bg-gray-800 border-gray-700">
                         <CardContent className="py-12 text-center">
                           <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                          <p className="text-gray-400">
-                            No money available for investment
+                          <p className="text-gray-200">
+                            Belum ada uang yang tersisa untuk investasi
                           </p>
-                          <p className="text-gray-500 text-sm mt-2">
-                            Adjust your budget to have remaining money for
-                            investments
+                          <p className="mt-2 text-sm text-gray-400">
+                            Saat ini total alokasi pengeluaran sama atau
+                            melebihi gaji bulanan Anda.
                           </p>
+                          <ul className="mx-auto mt-4 max-w-md space-y-2 text-left text-sm text-gray-300">
+                            <li className="flex items-start gap-2">
+                              <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-400" />
+                              <span>
+                                Tinjau ulang pengeluaran sekunder seperti
+                                hiburan dan langganan.
+                              </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-400" />
+                              <span>
+                                Coba turunkan target tabungan atau uang saku
+                                sementara waktu.
+                              </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-400" />
+                              <span>
+                                Sisihkan minimal Rp 100.000 agar bisa mulai
+                                investasi reksa dana.
+                              </span>
+                            </li>
+                          </ul>
+                          <Button
+                            className="mt-6 text-white"
+                            style={{ backgroundColor: "#007200" }}
+                            onClick={() =>
+                              formRef.current?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              })
+                            }
+                          >
+                            Kembali Edit Budget
+                          </Button>
                         </CardContent>
                       </Card>
                     )}
@@ -528,7 +793,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
                 {/* Portfolio Analysis Tab */}
                 <TabsContent value="portfolio" className="mt-6">
-                  <Suspense fallback={<TabLoadingState label="portfolio" />}>
+                  <Suspense fallback={<TabLoadingState label="portofolio" />}>
                     <InvestmentRecommendations
                       remainingMoney={remainingMoney}
                       monthlySalary={parseIDR(formData.monthlySalary)}

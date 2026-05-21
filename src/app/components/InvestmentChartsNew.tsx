@@ -32,12 +32,10 @@ import {
 import {
   analyzePriceMovement,
   generateForecastData,
-  calculatePortfolioReturn,
   calculatePortfolioReturnByProfile,
   getPortfolioAllocation,
   formatUSD,
   formatIDR,
-  formatPercentage,
   AllocationRecommendation,
   PriceAnalysis,
   interpolateHistoricalData,
@@ -109,30 +107,42 @@ export function InvestmentCharts({
 
   const profileNarratives = {
     conservative: {
-      label: "Conservative",
+      label: "Konservatif",
       accent: "#38bdf8",
-      title: "Stabil dulu, growth belakangan",
+      title: "Stabil dulu, pertumbuhan belakangan",
       reason:
         "SPY dipakai sebagai core diversifikasi, lalu JNJ dan KO disertakan karena karakter bisnisnya defensif sehingga cocok saat prioritasnya menjaga modal.",
     },
     balanced: {
-      label: "Balanced",
+      label: "Seimbang",
       accent: "#70e000",
-      title: "Seimbang antara safety dan growth",
+      title: "Seimbang antara keamanan dan pertumbuhan",
       reason:
         "SPY menjadi jangkar pasar luas, sementara MSFT dan AAPL disertakan karena kualitas laba dan ekosistemnya memberi potensi pertumbuhan yang lebih konsisten.",
     },
     aggressive: {
-      label: "Aggressive",
+      label: "Agresif",
       accent: "#ef4444",
-      title: "Kejar upside, siap volatilitas",
+      title: "Kejar potensi naik, siap volatilitas",
       reason:
-        "NVDA dan TSLA disertakan untuk eksposur inovasi berisiko tinggi, sedangkan AAPL membantu memberi fondasi kualitas di portofolio growth.",
+        "NVDA dan TSLA disertakan untuk eksposur inovasi berisiko tinggi, sedangkan AAPL membantu memberi fondasi kualitas di portofolio pertumbuhan.",
     },
   } satisfies Record<
     "conservative" | "balanced" | "aggressive",
     { label: string; accent: string; title: string; reason: string }
   >;
+
+  const profileLabels = {
+    conservative: "Konservatif",
+    balanced: "Seimbang",
+    aggressive: "Agresif",
+  } satisfies Record<"conservative" | "balanced" | "aggressive", string>;
+
+  const riskLabels = {
+    Low: "Risiko rendah",
+    Medium: "Risiko sedang",
+    High: "Risiko tinggi",
+  } satisfies Record<"Low" | "Medium" | "High", string>;
 
   // All stock definitions organized by risk profile
   // Using 3 stocks per profile to minimize API calls (Alpha Vantage: 5 calls/min)
@@ -155,7 +165,7 @@ export function InvestmentCharts({
         name: "S&P 500 ETF (SPY)",
         basePrice: 600,
         color: "#007200",
-        description: "Diversified index tracking 500 largest US companies",
+        description: "Indeks luas yang melacak 500 perusahaan besar AS",
         riskLevel: "Low",
       },
       {
@@ -163,7 +173,7 @@ export function InvestmentCharts({
         name: "Johnson & Johnson (JNJ)",
         basePrice: 160,
         color: "#dc2626",
-        description: "Healthcare leader with 60+ years of dividends",
+        description: "Pemimpin sektor kesehatan dengan histori dividen panjang",
         riskLevel: "Low",
       },
       {
@@ -171,7 +181,7 @@ export function InvestmentCharts({
         name: "Coca-Cola (KO)",
         basePrice: 62,
         color: "#1e40af",
-        description: "Defensive consumer brand with stable dividends",
+        description: "Brand konsumsi defensif dengan dividen stabil",
         riskLevel: "Low",
       },
     ],
@@ -182,7 +192,7 @@ export function InvestmentCharts({
         name: "S&P 500 ETF (SPY)",
         basePrice: 600,
         color: "#007200",
-        description: "Diversified index tracking 500 largest US companies",
+        description: "Indeks luas yang melacak 500 perusahaan besar AS",
         riskLevel: "Low",
       },
       {
@@ -190,7 +200,8 @@ export function InvestmentCharts({
         name: "Microsoft (MSFT)",
         basePrice: 420,
         color: "#0078d4",
-        description: "Quality tech company with stable growth",
+        description:
+          "Perusahaan teknologi berkualitas dengan pertumbuhan stabil",
         riskLevel: "Medium",
       },
       {
@@ -198,7 +209,7 @@ export function InvestmentCharts({
         name: "Apple (AAPL)",
         basePrice: 250,
         color: "#a3a3a3",
-        description: "Technology ecosystem with strong earnings",
+        description: "Ekosistem teknologi dengan pendapatan kuat",
         riskLevel: "Medium",
       },
     ],
@@ -209,7 +220,7 @@ export function InvestmentCharts({
         name: "NVIDIA (NVDA)",
         basePrice: 140,
         color: "#76b900",
-        description: "AI and GPU market leader with explosive growth",
+        description: "Pemimpin pasar AI/GPU dengan pertumbuhan tinggi",
         riskLevel: "High",
       },
       {
@@ -217,7 +228,7 @@ export function InvestmentCharts({
         name: "Tesla (TSLA)",
         basePrice: 400,
         color: "#dc2626",
-        description: "EV and energy innovation with high volatility",
+        description: "Inovasi EV dan energi dengan volatilitas tinggi",
         riskLevel: "High",
       },
       {
@@ -225,7 +236,7 @@ export function InvestmentCharts({
         name: "Apple (AAPL)",
         basePrice: 250,
         color: "#a3a3a3",
-        description: "Technology ecosystem with strong brand loyalty",
+        description: "Ekosistem teknologi dengan loyalitas brand kuat",
         riskLevel: "High",
       },
     ],
@@ -266,12 +277,6 @@ export function InvestmentCharts({
 
       // Collect all unique stocks from all profiles
       const allProfiles = ["low", "medium", "high"] as const;
-      const profileNameMap: Record<string, string> = {
-        low: "Low Risk",
-        medium: "Medium Risk",
-        high: "High Risk",
-      };
-
       // Track all loaded data by symbol to avoid duplicate API calls
       const loadedStockData: Record<string, InvestmentOption> = {};
       const newCache: Record<string, InvestmentOption[]> = {};
@@ -304,7 +309,7 @@ export function InvestmentCharts({
         if (!stockDef) continue;
 
         setLoadingProgress(
-          `Loading ${symbol} (${loadedCount + 1}/${totalStocks})...`,
+          `Memuat ${symbol} (${loadedCount + 1}/${totalStocks})...`,
         );
 
         // Small delay between stocks to avoid overwhelming the API
@@ -529,7 +534,7 @@ export function InvestmentCharts({
                     <div className="bg-gray-800 border border-gray-600 rounded-lg p-2">
                       <p className="text-white font-medium">{label}</p>
                       <p className="text-green-400">
-                        Forecast: {formatUSD(forecastData.value as number)}
+                        Proyeksi: {formatUSD(forecastData.value as number)}
                       </p>
                     </div>
                   );
@@ -598,7 +603,7 @@ export function InvestmentCharts({
                     <div className="bg-gray-800 border border-gray-600 rounded-lg p-2">
                       <p className="text-white font-medium">{label}</p>
                       <p className="text-green-400">
-                        Price: {formatUSD(priceData.value as number)}
+                        Harga: {formatUSD(priceData.value as number)}
                       </p>
                     </div>
                   );
@@ -662,10 +667,10 @@ export function InvestmentCharts({
           style={{ color: "#70e000" }}
         />
         <span className="text-lg text-white mt-4 font-medium">
-          Memuat Data Real-Time...
+          Memuat Data Langsung...
         </span>
         <span className="text-gray-400 mt-2">
-          {loadingProgress || "Connecting to Yahoo Finance..."}
+          {loadingProgress || "Menghubungkan ke Yahoo Finance..."}
         </span>
         <div className="mt-4 bg-gray-800 rounded-lg p-4 max-w-md">
           <p className="text-sm text-gray-400 text-center">
@@ -682,10 +687,10 @@ export function InvestmentCharts({
   if (error) {
     return (
       <div className="bg-red-950 border border-red-800 rounded-lg p-4">
-        <h4 className="font-medium text-red-400 mb-2">❌ Error Loading Data</h4>
+        <h4 className="font-medium text-red-400 mb-2">Data gagal dimuat</h4>
         <p className="text-red-300 text-sm">{error}</p>
         <p className="text-red-400 text-sm mt-2">
-          Troubleshooting: Try refreshing the page
+          Coba muat ulang halaman atau cek koneksi API.
         </p>
       </div>
     );
@@ -697,14 +702,14 @@ export function InvestmentCharts({
 
       <div className="flex items-center gap-2">
         <TrendingUp className="w-6 h-6" style={{ color: "#70e000" }} />
-        <h2 className="text-2xl text-white">Investment Opportunities</h2>
+        <h2 className="text-2xl text-white">Peluang Investasi</h2>
       </div>
       <p className="text-gray-400">
-        Based on historical market analysis, here are top investment
-        recommendations with expected 30-day returns
+        Berdasarkan analisis data historis, berikut contoh instrumen yang cocok
+        dengan profil risiko dan estimasi return 30 hari.
         <span className="text-green-400">
           {" "}
-          (Real-time data from Yahoo Finance ✓)
+          (Data real-time dari Yahoo Finance ✓)
         </span>
       </p>
 
@@ -712,9 +717,9 @@ export function InvestmentCharts({
       <div className="motion-card motion-glow bg-gray-800/90 border border-gray-700 rounded-lg p-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-white font-medium">Select Risk Profile</h3>
+            <h3 className="text-white font-medium">Pilih Profil Risiko</h3>
             <p className="text-sm text-gray-400">
-              Choose your investment style to see matching stocks
+              Pilih gaya investasi untuk melihat saham yang sesuai.
             </p>
           </div>
           <div className="flex gap-2">
@@ -734,10 +739,10 @@ export function InvestmentCharts({
                   }`}
                 >
                   {profile === "conservative"
-                    ? "🛡️ Conservative"
+                    ? "🛡️ Konservatif"
                     : profile === "balanced"
-                      ? "⚖️ Balanced"
-                      : "🚀 Aggressive"}
+                      ? "⚖️ Seimbang"
+                      : "🚀 Agresif"}
                 </button>
               ),
             )}
@@ -745,11 +750,11 @@ export function InvestmentCharts({
         </div>
         <div className="mt-3 text-xs text-gray-500">
           {selectedRiskProfile === "conservative" &&
-            "Conservative: SPY + JNJ + KO untuk diversifikasi dan defensiveness."}
+            "Konservatif: SPY + JNJ + KO untuk diversifikasi dan karakter defensif."}
           {selectedRiskProfile === "balanced" &&
-            "Balanced: SPY + MSFT + AAPL untuk indeks luas dan quality growth."}
+            "Seimbang: SPY + MSFT + AAPL untuk indeks luas dan pertumbuhan berkualitas."}
           {selectedRiskProfile === "aggressive" &&
-            "Aggressive: NVDA + TSLA + AAPL untuk growth tinggi dengan volatilitas lebih besar."}
+            "Agresif: NVDA + TSLA + AAPL untuk pertumbuhan tinggi dengan volatilitas lebih besar."}
         </div>
       </div>
 
@@ -760,7 +765,7 @@ export function InvestmentCharts({
         }}
       >
         <p className="text-xs uppercase tracking-[0.24em] text-gray-500">
-          Portfolio thesis
+          Tesis portofolio
         </p>
         <h3 className="mt-1 text-xl font-semibold text-white">
           {profileNarratives[selectedRiskProfile].label}:{" "}
@@ -788,7 +793,7 @@ export function InvestmentCharts({
                         investment.riskLevel,
                       )}`}
                     >
-                      {investment.riskLevel} Risk
+                      {riskLabels[investment.riskLevel]}
                     </span>
                   </CardTitle>
                   <CardDescription className="mt-2 text-gray-400">
@@ -822,7 +827,7 @@ export function InvestmentCharts({
                       %
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400">30-Day Return</div>
+                  <div className="text-xs text-gray-400">Return 30 hari</div>
                 </div>
               </div>
             </CardHeader>
@@ -831,7 +836,7 @@ export function InvestmentCharts({
               {investment.priceAnalysis && (
                 <div className="motion-card grid grid-cols-3 md:grid-cols-3 gap-4 mb-6 p-3 bg-gray-700 rounded-lg">
                   <div>
-                    <div className="text-xs text-gray-400">30-Day Return</div>
+                    <div className="text-xs text-gray-400">Return 30 hari</div>
                     <div
                       className="text-lg font-semibold"
                       style={{
@@ -845,13 +850,13 @@ export function InvestmentCharts({
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400">High (30d)</div>
+                    <div className="text-xs text-gray-400">Tertinggi (30h)</div>
                     <div className="text-lg font-semibold text-white">
                       {formatUSD(investment.priceAnalysis.highPrice)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400">Low (30d)</div>
+                    <div className="text-xs text-gray-400">Terendah (30h)</div>
                     <div className="text-lg font-semibold text-white">
                       {formatUSD(investment.priceAnalysis.lowPrice)}
                     </div>
@@ -865,7 +870,7 @@ export function InvestmentCharts({
                   <div className="mb-3">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-medium text-white">
-                        Current Price Trend (Last 30 Days)
+                        Tren Harga Saat Ini (30 Hari Terakhir)
                       </h4>
                       <div className="text-right">
                         <div
@@ -875,7 +880,7 @@ export function InvestmentCharts({
                           {formatUSD(investment.currentPrice)}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Current Price
+                          Harga saat ini
                         </div>
                       </div>
                     </div>
@@ -891,7 +896,7 @@ export function InvestmentCharts({
                   <div className="mb-3">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-medium text-white">
-                        Expected Price Trend (Next 30 Days)
+                        Proyeksi Tren Harga (30 Hari Berikutnya)
                       </h4>
                       <div className="text-right">
                         <div
@@ -901,7 +906,7 @@ export function InvestmentCharts({
                           {formatUSD(investment.expectedPrice)}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Forecasted Price
+                          Harga proyeksi
                         </div>
                       </div>
                     </div>
@@ -926,7 +931,7 @@ export function InvestmentCharts({
                   <div className="grid grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
-                        Suggested Investment
+                        Investasi disarankan
                       </div>
                       <div className="font-medium text-white">
                         {formatIDR(remainingMoney * 0.3)}
@@ -957,7 +962,7 @@ export function InvestmentCharts({
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
-                        Total Gain (30 days)
+                        Estimasi gain (30 hari)
                       </div>
                       <div
                         className="font-medium"
@@ -976,7 +981,7 @@ export function InvestmentCharts({
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">
-                        Total Value
+                        Estimasi nilai akhir
                       </div>
                       <div className="font-medium text-white">
                         {formatIDR(
@@ -995,11 +1000,9 @@ export function InvestmentCharts({
                 style={{ borderLeftColor: investment.color }}
               >
                 <p className="text-sm text-gray-300">
-                  <span className="font-medium text-white">
-                    Recommendation:
-                  </span>{" "}
-                  Consider investing in {investment.name} with an expected
-                  30-day return of{" "}
+                  <span className="font-medium text-white">Rekomendasi:</span>{" "}
+                  Pertimbangkan alokasi edukatif ke {investment.name} dengan
+                  estimasi return 30 hari sebesar{" "}
                   <span
                     className="font-medium"
                     style={{
@@ -1016,11 +1019,11 @@ export function InvestmentCharts({
                   </span>
                   .{" "}
                   {investment.riskLevel === "High" &&
-                    "However, be aware of the high volatility and only invest what you can afford to lose."}
+                    "Perhatikan volatilitas tinggi dan gunakan hanya dana yang siap menerima risiko."}
                   {investment.riskLevel === "Low" &&
-                    "This is a stable, long-term investment suitable for conservative investors."}
+                    "Instrumen ini relatif stabil untuk orientasi jangka panjang dan profil konservatif."}
                   {investment.riskLevel === "Medium" &&
-                    "This offers a balanced risk-reward ratio for moderate investors."}
+                    "Instrumen ini menawarkan keseimbangan risiko dan potensi return untuk profil moderat."}
                 </p>
               </div>
             </CardContent>
@@ -1033,10 +1036,10 @@ export function InvestmentCharts({
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5" style={{ color: "#70e000" }} />
-            Portfolio Allocation
+            Alokasi Portofolio
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Recommended portfolio allocation based on your risk profile
+            Rekomendasi alokasi berdasarkan profil risiko yang dipilih.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1053,7 +1056,7 @@ export function InvestmentCharts({
                       : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                   }`}
                 >
-                  {profile.charAt(0).toUpperCase() + profile.slice(1)}
+                  {profileLabels[profile]}
                 </button>
               ),
             )}
@@ -1083,7 +1086,7 @@ export function InvestmentCharts({
                       allocation.riskLevel,
                     )}`}
                   >
-                    {allocation.riskLevel}
+                    {riskLabels[allocation.riskLevel]}
                   </div>
                 </div>
               </div>
@@ -1101,7 +1104,7 @@ export function InvestmentCharts({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-gray-400 mb-1">
-                  Expected Portfolio Return (30 days)
+                  Estimasi Return Portofolio (30 hari)
                 </div>
                 <div
                   className="text-2xl font-bold"
@@ -1114,12 +1117,9 @@ export function InvestmentCharts({
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-400 mb-1">
-                  Allocation Profile
-                </div>
+                <div className="text-sm text-gray-400 mb-1">Profil Alokasi</div>
                 <div className="text-xl font-bold text-white">
-                  {selectedRiskProfile.charAt(0).toUpperCase() +
-                    selectedRiskProfile.slice(1)}
+                  {profileLabels[selectedRiskProfile]}
                 </div>
               </div>
             </div>
@@ -1135,7 +1135,7 @@ export function InvestmentCharts({
             >
               <div className="text-sm text-gray-300 mb-2">
                 <span className="font-medium text-white">
-                  Suggested Investment Amount:
+                  Nominal investasi yang disarankan:
                 </span>{" "}
                 {formatIDR(remainingMoney)}
               </div>
@@ -1159,20 +1159,13 @@ export function InvestmentCharts({
       {/* Disclaimer */}
       <div className="motion-card bg-amber-950 border border-amber-800 rounded-lg p-4">
         <h4 className="font-medium text-amber-400 mb-2">
-          ⚠️ Investment Disclaimer
+          Disclaimer Investasi
         </h4>
         <p className="text-sm text-amber-300">
-          These are educational examples only and not financial advice. Past
-          performance does not guarantee future results. All investments carry
-          risk. Please consult with a qualified financial advisor before making
-          investment decisions.
-          <br />
-          <span className="block mt-2">
-            Project ini adalah contoh edukasi saja dan bukan merupakan nasihat
-            keuangan. Semua investasi mengandung risiko. Mohon konsultasikan
-            dengan penasihat keuangan yang berkualifikasi sebelum membuat
-            keputusan untuk ber-investasi.
-          </span>
+          Contoh ini hanya untuk edukasi dan bukan nasihat keuangan. Performa
+          masa lalu tidak menjamin hasil masa depan. Semua investasi mengandung
+          risiko; konsultasikan dengan penasihat keuangan berkualifikasi sebelum
+          membuat keputusan investasi.
         </p>
       </div>
     </div>

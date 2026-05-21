@@ -174,7 +174,7 @@ export function interpolateHistoricalData(
 }> {
   if (historicalData.length === 0) return historicalData;
 
-  const result = [];
+  const result: typeof historicalData = [];
   const startDate = new Date();
   // Hitung mundur 30 hari dari hari ini
   startDate.setDate(startDate.getDate() - 30);
@@ -203,7 +203,7 @@ export function interpolateHistoricalData(
       const prevData = result[result.length - 1];
 
       // Cari data berikutnya
-      let nextData = null;
+      let nextData: (typeof historicalData)[number] | null = null;
       for (let j = i + 1; j <= 30; j++) {
         const futureDate = new Date(startDate);
         futureDate.setDate(futureDate.getDate() + j);
@@ -330,20 +330,20 @@ export function getPortfolioAllocation(
           name: "S&P 500 ETF (SPY)",
           weight: 0.5,
           riskLevel: "Low",
-          description:
-            "50% - Diversified index tracking 500 largest US companies",
+          description: "50% - Indeks luas yang melacak 500 perusahaan besar AS",
         },
         {
           name: "Johnson & Johnson (JNJ)",
           weight: 0.3,
           riskLevel: "Low",
-          description: "30% - Healthcare leader with 60+ years of dividends",
+          description:
+            "30% - Pemimpin kesehatan dengan histori dividen panjang",
         },
         {
           name: "Coca-Cola (KO)",
           weight: 0.2,
           riskLevel: "Low",
-          description: "20% - Defensive consumer brand with stable dividends",
+          description: "20% - Brand konsumsi defensif dengan dividen stabil",
         },
       ];
 
@@ -354,19 +354,19 @@ export function getPortfolioAllocation(
           name: "S&P 500 ETF (SPY)",
           weight: 0.4,
           riskLevel: "Low",
-          description: "40% - Diversified market exposure",
+          description: "40% - Eksposur pasar luas dan terdiversifikasi",
         },
         {
           name: "Microsoft (MSFT)",
           weight: 0.35,
           riskLevel: "Medium",
-          description: "35% - Quality tech with stable growth",
+          description: "35% - Teknologi berkualitas dengan pertumbuhan stabil",
         },
         {
           name: "Apple (AAPL)",
           weight: 0.25,
           riskLevel: "Medium",
-          description: "25% - Technology ecosystem with strong earnings",
+          description: "25% - Ekosistem teknologi dengan laba kuat",
         },
       ];
 
@@ -377,19 +377,19 @@ export function getPortfolioAllocation(
           name: "NVIDIA (NVDA)",
           weight: 0.4,
           riskLevel: "High",
-          description: "40% - AI/GPU market leader with high growth",
+          description: "40% - Pemimpin AI/GPU dengan pertumbuhan tinggi",
         },
         {
           name: "Tesla (TSLA)",
           weight: 0.35,
           riskLevel: "High",
-          description: "35% - EV and energy innovation play",
+          description: "35% - Eksposur inovasi EV dan energi",
         },
         {
           name: "Apple (AAPL)",
           weight: 0.25,
           riskLevel: "High",
-          description: "25% - Tech ecosystem with strong earnings",
+          description: "25% - Ekosistem teknologi dengan laba kuat",
         },
       ];
 

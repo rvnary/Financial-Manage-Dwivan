@@ -19,6 +19,7 @@ import {
   Target,
   ShieldCheck,
   ListChecks,
+  Lightbulb,
 } from "lucide-react";
 
 interface FinancialDashboardProps {
@@ -104,24 +105,28 @@ export function FinancialDashboard({
   const healthScore = calculateHealthScore();
 
   const getHealthStatus = () => {
-    if (healthScore >= 80) return { label: "Excellent", color: "#22c55e" };
-    if (healthScore >= 60) return { label: "Good", color: "#70e000" };
-    if (healthScore >= 40) return { label: "Fair", color: "#eab308" };
+    if (healthScore >= 80) return { label: "Sangat Baik", color: "#22c55e" };
+    if (healthScore >= 60) return { label: "Baik", color: "#70e000" };
+    if (healthScore >= 40) return { label: "Cukup", color: "#eab308" };
     if (healthScore >= 20)
-      return { label: "Needs Improvement", color: "#f97316" };
-    return { label: "Critical", color: "#ef4444" };
+      return { label: "Perlu Perbaikan", color: "#f97316" };
+    return { label: "Kritis", color: "#ef4444" };
   };
 
   const healthStatus = getHealthStatus();
 
   // Expense breakdown data
   const expenseData = [
-    { name: "Primary Expenses", value: primaryExpenses, color: "#ef4444" },
-    { name: "Secondary Expenses", value: secondaryExpenses, color: "#f97316" },
-    { name: "Savings", value: savings, color: "#22c55e" },
-    { name: "Pocket Money", value: pocketMoney, color: "#3b82f6" },
+    { name: "Pengeluaran Utama", value: primaryExpenses, color: "#ef4444" },
     {
-      name: "Available to Invest",
+      name: "Pengeluaran Sekunder",
+      value: secondaryExpenses,
+      color: "#f97316",
+    },
+    { name: "Tabungan", value: savings, color: "#22c55e" },
+    { name: "Uang Saku", value: pocketMoney, color: "#3b82f6" },
+    {
+      name: "Tersedia untuk Investasi",
       value: Math.max(0, remainingMoney),
       color: "#70e000",
     },
@@ -140,25 +145,25 @@ export function FinancialDashboard({
   // Key metrics
   const metrics = [
     {
-      label: "Monthly Income",
+      label: "Pendapatan Bulanan",
       value: formatIDR(monthlySalary),
       icon: Wallet,
       color: "#70e000",
     },
     {
-      label: "Total Expenses",
+      label: "Total Pengeluaran",
       value: formatIDR(totalExpenses),
       icon: CreditCard,
       color: "#ef4444",
     },
     {
-      label: "Savings",
+      label: "Tabungan",
       value: formatIDR(savings),
       icon: PiggyBank,
       color: "#22c55e",
     },
     {
-      label: "Available to Invest",
+      label: "Tersedia untuk Investasi",
       value: formatIDR(remainingMoney),
       icon: TrendingUp,
       color: remainingMoney >= 0 ? "#70e000" : "#ef4444",
@@ -182,9 +187,9 @@ export function FinancialDashboard({
 
     if (remainingMoney < 0) {
       insights.push({
-        title: "Cashflow negatif",
+        title: "Arus kas negatif",
         description:
-          "Pengeluaran sudah melewati income. Fokus pertama adalah menutup defisit sebelum menambah investasi.",
+          "Pengeluaran sudah melewati pemasukan. Fokus pertama adalah menutup defisit sebelum menambah investasi.",
         tone: "danger",
         metric: formatIDR(Math.abs(remainingMoney)),
       });
@@ -192,15 +197,15 @@ export function FinancialDashboard({
       insights.push({
         title: "Ruang investasi kuat",
         description:
-          "Sisa dana bulanan cukup sehat. Kamu bisa membagi dana ke investasi dan buffer kas.",
+          "Sisa dana bulanan cukup sehat. Kamu bisa membagi dana ke investasi dan cadangan kas.",
         tone: "success",
         metric: `${remainingRate.toFixed(1)}% sisa`,
       });
     } else if (remainingMoney > 0) {
       insights.push({
-        title: "Cashflow positif tipis",
+        title: "Arus kas positif tipis",
         description:
-          "Masih ada sisa dana, tapi ruangnya belum besar. Hindari komitmen cicilan atau subscription baru.",
+          "Masih ada sisa dana, tapi ruangnya belum besar. Hindari komitmen cicilan atau langganan baru.",
         tone: "warning",
         metric: formatIDR(remainingMoney),
       });
@@ -208,29 +213,29 @@ export function FinancialDashboard({
 
     if (savingsRate < 20) {
       insights.push({
-        title: "Savings rate belum ideal",
+        title: "Rasio tabungan belum ideal",
         description:
-          "Target aman minimal 20% income. Naikkan tabungan bertahap agar tidak terasa berat.",
+          "Target aman minimal 20% pemasukan. Naikkan tabungan bertahap agar tidak terasa berat.",
         tone: savingsRate < 10 ? "warning" : "info",
-        metric: `${savingsRate.toFixed(1)}% saved`,
+        metric: `${savingsRate.toFixed(1)}% tersimpan`,
       });
     } else {
       insights.push({
         title: "Kebiasaan menabung solid",
         description:
-          "Savings rate sudah melewati standar dasar. Pertahankan konsistensi dengan autodebit setelah gajian.",
+          "Rasio tabungan sudah melewati standar dasar. Pertahankan konsistensi dengan autodebit setelah gajian.",
         tone: "success",
-        metric: `${savingsRate.toFixed(1)}% saved`,
+        metric: `${savingsRate.toFixed(1)}% tersimpan`,
       });
     }
 
     if (expenseRate > 70) {
       insights.push({
-        title: "Expense ratio tinggi",
+        title: "Rasio pengeluaran tinggi",
         description:
-          "Pengeluaran mengambil porsi besar dari income. Audit kebutuhan sekunder dan biaya tetap bulanan.",
+          "Pengeluaran mengambil porsi besar dari pemasukan. Audit kebutuhan sekunder dan biaya tetap bulanan.",
         tone: expenseRate > 90 ? "danger" : "warning",
-        metric: `${expenseRate.toFixed(1)}% expense`,
+        metric: `${expenseRate.toFixed(1)}% pengeluaran`,
       });
     }
 
@@ -246,11 +251,11 @@ export function FinancialDashboard({
 
     if (expenseRate >= 60 && expenseRate <= 70) {
       insights.push({
-        title: "Expense ratio mendekati batas",
+        title: "Rasio pengeluaran mendekati batas",
         description:
           "Pengeluaran masih aman, tapi sudah dekat batas 70%. Monitor belanja kecil yang sering tidak terasa.",
         tone: "info",
-        metric: `${expenseRate.toFixed(1)}% expense`,
+        metric: `${expenseRate.toFixed(1)}% pengeluaran`,
       });
     }
 
@@ -258,7 +263,7 @@ export function FinancialDashboard({
       insights.push({
         title: "Sisa dana bisa dorong tabungan",
         description:
-          "Jika tidak ada kebutuhan mendesak, sebagian sisa dana bisa dialihkan ke tabungan agar mendekati 20% income.",
+          "Jika tidak ada kebutuhan mendesak, sebagian sisa dana bisa dialihkan ke tabungan agar mendekati 20% pemasukan.",
         tone: "success",
         metric: formatIDR(
           Math.min(remainingMoney, monthlySalary * 0.2 - savings),
@@ -268,11 +273,11 @@ export function FinancialDashboard({
 
     if (pocketMoney > savings) {
       insights.push({
-        title: "Pocket money lebih besar dari tabungan",
+        title: "Uang saku lebih besar dari tabungan",
         description:
-          "Coba tukar sebagian budget lifestyle menjadi tabungan agar progres goal lebih cepat.",
+          "Coba tukar sebagian anggaran gaya hidup menjadi tabungan agar progres target lebih cepat.",
         tone: "warning",
-        metric: `${formatIDR(pocketMoney - savings)} gap`,
+        metric: `${formatIDR(pocketMoney - savings)} selisih`,
       });
     }
 
@@ -280,7 +285,7 @@ export function FinancialDashboard({
       insights.push({
         title: "Biaya pokok dominan",
         description:
-          "Kebutuhan utama melewati 50% income. Cari opsi hemat untuk kos, makan, transport, atau utilitas.",
+          "Kebutuhan utama melewati 50% pemasukan. Cari opsi hemat untuk kos, makan, transport, atau utilitas.",
         tone: "warning",
         metric: `${((primaryExpenses / monthlySalary) * 100).toFixed(1)}% pokok`,
       });
@@ -310,7 +315,7 @@ export function FinancialDashboard({
     remainingMoney < 0
       ? {
           title: "Stop defisit bulan ini",
-          description: `Pangkas minimal ${formatIDR(Math.abs(remainingMoney))} dari expense sekunder/pocket money agar cashflow kembali aman.`,
+          description: `Pangkas minimal ${formatIDR(Math.abs(remainingMoney))} dari pengeluaran sekunder atau uang saku agar arus kas kembali aman.`,
           priority: "High",
           color: "#ef4444",
         }
@@ -339,18 +344,24 @@ export function FinancialDashboard({
       ? {
           title: "Naikkan savings rate",
           description:
-            "Tambah tabungan 2-5% dari income tiap bulan sampai minimal mencapai 20% income.",
+            "Tambah tabungan 2-5% dari pemasukan tiap bulan sampai minimal mencapai 20% pemasukan.",
           priority: "Medium",
           color: "#38bdf8",
         }
       : {
           title: "Otomatisasi investasi",
           description:
-            "Savings rate sudah solid. Buat jadwal investasi rutin agar keputusan tidak bergantung mood pasar.",
+            "Rasio tabungan sudah solid. Buat jadwal investasi rutin agar keputusan tidak bergantung mood pasar.",
           priority: "Low",
           color: "#70e000",
         },
   ];
+
+  const priorityLabels: Record<ActionItem["priority"], string> = {
+    High: "Tinggi",
+    Medium: "Sedang",
+    Low: "Rendah",
+  };
 
   return (
     <div className="motion-stagger space-y-6">
@@ -359,7 +370,7 @@ export function FinancialDashboard({
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Financial Health Score
+            Skor Kesehatan Keuangan
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -421,11 +432,11 @@ export function FinancialDashboard({
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-gray-400">
-                  Savings Rate:{" "}
+                  Rasio Tabungan:{" "}
                   <span className="text-white">{savingsRate.toFixed(1)}%</span>
                 </div>
                 <div className="text-gray-400">
-                  Expense Rate:{" "}
+                  Rasio Pengeluaran:{" "}
                   <span className="text-white">{expenseRate.toFixed(1)}%</span>
                 </div>
               </div>
@@ -470,7 +481,7 @@ export function FinancialDashboard({
           <CardHeader className="pb-2">
             <CardTitle className="text-white flex items-center gap-2 text-base">
               <ShieldCheck className="w-5 h-5" style={{ color: "#70e000" }} />
-              Emergency Fund Readiness
+              Kesiapan Dana Darurat
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -496,7 +507,7 @@ export function FinancialDashboard({
           <CardHeader className="pb-2">
             <CardTitle className="text-white flex items-center gap-2 text-base">
               <Target className="w-5 h-5" style={{ color: "#70e000" }} />
-              Monthly Goal Progress
+              Progres Target Bulanan
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -531,7 +542,7 @@ export function FinancialDashboard({
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <ShoppingBag className="w-5 h-5" />
-            Budget Breakdown
+            Rincian Anggaran
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -569,7 +580,7 @@ export function FinancialDashboard({
                               {formatIDR(data.value)}
                             </p>
                             <p className="text-gray-400 text-sm">
-                              {percentage}% of income
+                              {percentage}% dari pemasukan
                             </p>
                           </div>
                         );
@@ -623,8 +634,8 @@ export function FinancialDashboard({
       <Card className="motion-card overflow-hidden border-gray-700 bg-gradient-to-br from-gray-800/95 via-gray-800/90 to-gray-900">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2 text-base">
-            <span className="text-xl">💡</span>
-            Financial Insights
+            <Lightbulb className="w-5 h-5" style={{ color: "#70e000" }} />
+            Insight Keuangan
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -655,7 +666,7 @@ export function FinancialDashboard({
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2 text-base">
             <ListChecks className="w-5 h-5" />
-            Smart Action Plan
+            Rencana Aksi Cerdas
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -671,13 +682,13 @@ export function FinancialDashboard({
                 />
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold text-green-400">
-                    Step {index + 1}
+                    Langkah {index + 1}
                   </span>
                   <span
                     className="rounded-full px-2 py-1 text-xs font-semibold text-white"
                     style={{ backgroundColor: `${item.color}55` }}
                   >
-                    {item.priority}
+                    {priorityLabels[item.priority]}
                   </span>
                 </div>
                 <h4 className="mb-2 text-base font-semibold text-white">
