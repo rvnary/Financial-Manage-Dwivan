@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { lazy, Suspense, useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -10,18 +10,37 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { InvestmentRecommendations } from "./InvestmentRecommendations";
-import { InvestmentCharts } from "./InvestmentChartsNew";
-import { FinancialDashboard } from "./FinancialDashboard";
-import { InvestmentSimulator } from "./InvestmentSimulator";
 import {
   ArrowLeft,
-  ChevronDown,
   LayoutDashboard,
   PieChart,
   TrendingUp,
   Calculator,
 } from "lucide-react";
+
+const FinancialDashboard = lazy(() =>
+  import("./FinancialDashboard").then((module) => ({
+    default: module.FinancialDashboard,
+  })),
+);
+
+const InvestmentCharts = lazy(() =>
+  import("./InvestmentChartsNew").then((module) => ({
+    default: module.InvestmentCharts,
+  })),
+);
+
+const InvestmentSimulator = lazy(() =>
+  import("./InvestmentSimulator").then((module) => ({
+    default: module.InvestmentSimulator,
+  })),
+);
+
+const InvestmentRecommendations = lazy(() =>
+  import("./InvestmentRecommendations").then((module) => ({
+    default: module.InvestmentRecommendations,
+  })),
+);
 
 interface FinancialPlannerProps {
   onBack: () => void;
@@ -33,7 +52,21 @@ interface FormData {
   secondaryExpenses: string;
   savings: string;
   pocketMoney: string;
+  financialGoal: string;
+  emergencyFund: string;
 }
+
+const STORAGE_KEY = "dwivan-financial-planner";
+
+const defaultFormData: FormData = {
+  monthlySalary: "",
+  primaryExpenses: "",
+  secondaryExpenses: "",
+  savings: "",
+  pocketMoney: "",
+  financialGoal: "",
+  emergencyFund: "",
+};
 
 // Format number to IDR currency display
 const formatToIDR = (value: string | number): string => {
@@ -50,13 +83,27 @@ const parseIDR = (value: string): number => {
   return parseInt(value.replace(/\D/g, "")) || 0;
 };
 
+function TabLoadingState({ label }: { label: string }) {
+  return (
+    <Card className="bg-gray-800 border-gray-700">
+      <CardContent className="py-12 text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-gray-700 border-t-green-400" />
+        <p className="text-gray-300">Loading {label}...</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
-  const [formData, setFormData] = useState<FormData>({
-    monthlySalary: "",
-    primaryExpenses: "",
-    secondaryExpenses: "",
-    savings: "",
-    pocketMoney: "",
+  const [formData, setFormData] = useState<FormData>(() => {
+    try {
+      const savedData = window.localStorage.getItem(STORAGE_KEY);
+      return savedData
+        ? { ...defaultFormData, ...JSON.parse(savedData) }
+        : defaultFormData;
+    } catch {
+      return defaultFormData;
+    }
   });
 
   const [showResults, setShowResults] = useState(false);
@@ -64,8 +111,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   const [stockReturns, setStockReturns] = useState<
     Array<{ symbol: string; monthlyReturn: number }>
   >([]);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  const formContentRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Shared risk profile state - synced between InvestmentRecommendations and InvestmentCharts
   const [selectedRiskProfile, setSelectedRiskProfile] = useState<
@@ -75,32 +121,9 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   // Track active tab to control InvestmentCharts visibility
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Handle scroll indicator visibility
   useEffect(() => {
-    const handleScroll = () => {
-      if (formContentRef.current) {
-        const element = formContentRef.current;
-        const isScrollable = element.scrollHeight > element.clientHeight;
-        const isAtBottom =
-          element.scrollTop + element.clientHeight >= element.scrollHeight - 10;
-
-        setShowScrollIndicator(isScrollable && !isAtBottom);
-      }
-    };
-
-    const element = formContentRef.current;
-    if (element) {
-      element.addEventListener("scroll", handleScroll);
-      // Check initial state
-      handleScroll();
-    }
-
-    return () => {
-      if (element) {
-        element.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, [showResults]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  }, [formData]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     // Only keep digits
@@ -120,18 +143,31 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
     const remaining = salary - primary - secondary - savings - pocket;
     setRemainingMoney(remaining);
     setShowResults(true);
+    window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
   };
 
+  const totalAllocated =
+    parseIDR(formData.primaryExpenses) +
+    parseIDR(formData.secondaryExpenses) +
+    parseIDR(formData.savings) +
+    parseIDR(formData.pocketMoney);
+  const salary = parseIDR(formData.monthlySalary);
+  const liveRemaining = salary - totalAllocated;
+  const allocationRate = salary > 0 ? (totalAllocated / salary) * 100 : 0;
+  const isOverBudget = salary > 0 && liveRemaining < 0;
+  const savingsRate =
+    salary > 0 ? (parseIDR(formData.savings) / salary) * 100 : 0;
+
   const handleReset = () => {
-    setFormData({
-      monthlySalary: "",
-      primaryExpenses: "",
-      secondaryExpenses: "",
-      savings: "",
-      pocketMoney: "",
-    });
+    setFormData(defaultFormData);
     setShowResults(false);
     setRemainingMoney(0);
+    window.localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
@@ -158,10 +194,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   recommendations
                 </CardDescription>
               </CardHeader>
-              <CardContent
-                ref={formContentRef}
-                className="relative max-h-[calc(100vh-200px)] overflow-y-auto"
-              >
+              <CardContent className="relative">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="salary" className="text-gray-300">
@@ -266,6 +299,110 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                     />
                   </div>
 
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="goal" className="text-gray-300">
+                        Financial Goal Target
+                      </Label>
+                      <Input
+                        id="goal"
+                        type="text"
+                        placeholder="0 - Target tabungan/investasi"
+                        value={
+                          formData.financialGoal
+                            ? formatToIDR(formData.financialGoal)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handleInputChange("financialGoal", e.target.value)
+                        }
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency" className="text-gray-300">
+                        Current Emergency Fund
+                      </Label>
+                      <Input
+                        id="emergency"
+                        type="text"
+                        placeholder="0 - Dana darurat saat ini"
+                        value={
+                          formData.emergencyFund
+                            ? formatToIDR(formData.emergencyFund)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handleInputChange("emergencyFund", e.target.value)
+                        }
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      />
+                    </div>
+                  </div>
+
+                  {salary > 0 && (
+                    <div
+                      className={`rounded-2xl border p-4 shadow-lg ${
+                        isOverBudget
+                          ? "border-red-800 bg-red-950/60"
+                          : "border-green-800 bg-green-950/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-gray-300">Live budget check</span>
+                        <span
+                          className={
+                            isOverBudget ? "text-red-300" : "text-green-300"
+                          }
+                        >
+                          {allocationRate.toFixed(1)}% allocated
+                        </span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-700">
+                        <div
+                          className={
+                            isOverBudget
+                              ? "h-full bg-red-500"
+                              : "h-full bg-green-500"
+                          }
+                          style={{ width: `${Math.min(100, allocationRate)}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-sm text-gray-300">
+                        Sisa sementara:{" "}
+                        {formatToIDR(Math.abs(liveRemaining)) || "Rp 0"}
+                        {isOverBudget ? " over budget" : " tersedia"}
+                      </p>
+                      <div className="mt-4 grid gap-3 text-xs text-gray-300 sm:grid-cols-3">
+                        <div className="rounded-lg bg-black/20 p-3">
+                          <span className="block text-gray-500">
+                            Savings rate
+                          </span>
+                          <strong className="text-white">
+                            {savingsRate.toFixed(1)}%
+                          </strong>
+                        </div>
+                        <div className="rounded-lg bg-black/20 p-3">
+                          <span className="block text-gray-500">Allocated</span>
+                          <strong className="text-white">
+                            {formatToIDR(totalAllocated)}
+                          </strong>
+                        </div>
+                        <div className="rounded-lg bg-black/20 p-3">
+                          <span className="block text-gray-500">Status</span>
+                          <strong
+                            className={
+                              isOverBudget ? "text-red-300" : "text-green-300"
+                            }
+                          >
+                            {isOverBudget ? "Perlu dikurangi" : "Aman"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex gap-4">
                     <Button
                       type="submit"
@@ -284,28 +421,13 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                     </Button>
                   </div>
                 </form>
-
-                {/* Scroll Indicator */}
-                {showScrollIndicator && (
-                  <div className="sticky bottom-0 left-0 right-0 flex justify-center pt-4 pb-2 bg-gradient-to-t from-gray-800 to-transparent">
-                    <div
-                      className="flex flex-col items-center gap-1 animate-bounce"
-                      style={{ color: "#70e000" }}
-                    >
-                      <span className="text-xs font-medium">
-                        Scroll untuk lebih
-                      </span>
-                      <ChevronDown className="w-5 h-5" />
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Tabbed Sections - Only show after calculation */}
           {showResults && (
-            <div className="mt-8">
+            <div ref={resultsRef} className="mt-8 scroll-mt-6">
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
@@ -344,14 +466,18 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard" className="mt-6">
-                  <FinancialDashboard
-                    monthlySalary={parseIDR(formData.monthlySalary)}
-                    primaryExpenses={parseIDR(formData.primaryExpenses)}
-                    secondaryExpenses={parseIDR(formData.secondaryExpenses)}
-                    savings={parseIDR(formData.savings)}
-                    pocketMoney={parseIDR(formData.pocketMoney)}
-                    remainingMoney={remainingMoney}
-                  />
+                  <Suspense fallback={<TabLoadingState label="dashboard" />}>
+                    <FinancialDashboard
+                      monthlySalary={parseIDR(formData.monthlySalary)}
+                      primaryExpenses={parseIDR(formData.primaryExpenses)}
+                      secondaryExpenses={parseIDR(formData.secondaryExpenses)}
+                      savings={parseIDR(formData.savings)}
+                      pocketMoney={parseIDR(formData.pocketMoney)}
+                      remainingMoney={remainingMoney}
+                      financialGoal={parseIDR(formData.financialGoal)}
+                      emergencyFund={parseIDR(formData.emergencyFund)}
+                    />
+                  </Suspense>
                 </TabsContent>
 
                 {/* Investment Charts Tab - Always render but show/hide with CSS for caching */}
@@ -360,12 +486,16 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                     className={activeTab === "investments" ? "block" : "hidden"}
                   >
                     {remainingMoney > 0 ? (
-                      <InvestmentCharts
-                        remainingMoney={remainingMoney}
-                        onStockReturnsChange={setStockReturns}
-                        selectedRiskProfile={selectedRiskProfile}
-                        onRiskProfileChange={setSelectedRiskProfile}
-                      />
+                      <Suspense
+                        fallback={<TabLoadingState label="investment data" />}
+                      >
+                        <InvestmentCharts
+                          remainingMoney={remainingMoney}
+                          onStockReturnsChange={setStockReturns}
+                          selectedRiskProfile={selectedRiskProfile}
+                          onRiskProfileChange={setSelectedRiskProfile}
+                        />
+                      </Suspense>
                     ) : (
                       <Card className="bg-gray-800 border-gray-700">
                         <CardContent className="py-12 text-center">
@@ -385,21 +515,25 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
                 {/* Investment Simulator Tab */}
                 <TabsContent value="simulator" className="mt-6">
-                  <InvestmentSimulator
-                    initialInvestment={Math.max(0, remainingMoney)}
-                    monthlyContribution={Math.max(0, remainingMoney)}
-                  />
+                  <Suspense fallback={<TabLoadingState label="simulator" />}>
+                    <InvestmentSimulator
+                      initialInvestment={Math.max(0, remainingMoney)}
+                      monthlyContribution={Math.max(0, remainingMoney)}
+                    />
+                  </Suspense>
                 </TabsContent>
 
                 {/* Portfolio Analysis Tab */}
                 <TabsContent value="portfolio" className="mt-6">
-                  <InvestmentRecommendations
-                    remainingMoney={remainingMoney}
-                    monthlySalary={parseIDR(formData.monthlySalary)}
-                    stockReturns={stockReturns}
-                    selectedRiskProfile={selectedRiskProfile}
-                    onRiskProfileChange={setSelectedRiskProfile}
-                  />
+                  <Suspense fallback={<TabLoadingState label="portfolio" />}>
+                    <InvestmentRecommendations
+                      remainingMoney={remainingMoney}
+                      monthlySalary={parseIDR(formData.monthlySalary)}
+                      stockReturns={stockReturns}
+                      selectedRiskProfile={selectedRiskProfile}
+                      onRiskProfileChange={setSelectedRiskProfile}
+                    />
+                  </Suspense>
                 </TabsContent>
               </Tabs>
             </div>
