@@ -353,9 +353,9 @@ export function FinancialDashboard({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="motion-stagger space-y-6">
       {/* Financial Health Score */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="motion-card motion-glow bg-gray-800/90 border-gray-700 backdrop-blur">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2">
             <Target className="w-5 h-5" />
@@ -387,7 +387,7 @@ export function FinancialDashboard({
                   fill="none"
                   strokeDasharray={`${healthScore * 2.51} 251`}
                   strokeLinecap="round"
-                  className="transition-all duration-1000"
+                  className="motion-pulse-soft transition-all duration-1000"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -437,11 +437,14 @@ export function FinancialDashboard({
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric, index) => (
-          <Card key={index} className="bg-gray-800 border-gray-700">
+          <Card
+            key={index}
+            className="motion-card bg-gray-800/90 border-gray-700"
+          >
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div
-                  className="p-2 rounded-lg"
+                  className="motion-pulse-soft p-2 rounded-lg"
                   style={{ backgroundColor: `${metric.color}20` }}
                 >
                   <metric.icon
@@ -463,7 +466,7 @@ export function FinancialDashboard({
 
       {/* Goal and Emergency Fund Planner */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="motion-card bg-gray-800/90 border-gray-700">
           <CardHeader className="pb-2">
             <CardTitle className="text-white flex items-center gap-2 text-base">
               <ShieldCheck className="w-5 h-5" style={{ color: "#70e000" }} />
@@ -477,7 +480,7 @@ export function FinancialDashboard({
             </div>
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-700">
               <div
-                className="h-full rounded-full bg-green-500 transition-all duration-700"
+                className="motion-bar h-full rounded-full bg-green-500 transition-all duration-700"
                 style={{ width: `${emergencyProgress}%` }}
               />
             </div>
@@ -489,7 +492,7 @@ export function FinancialDashboard({
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="motion-card bg-gray-800/90 border-gray-700">
           <CardHeader className="pb-2">
             <CardTitle className="text-white flex items-center gap-2 text-base">
               <Target className="w-5 h-5" style={{ color: "#70e000" }} />
@@ -507,7 +510,7 @@ export function FinancialDashboard({
             </div>
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-700">
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="motion-bar h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${goalProgress}%`,
                   backgroundColor: "#70e000",
@@ -524,7 +527,7 @@ export function FinancialDashboard({
       </div>
 
       {/* Expense Breakdown Chart */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="motion-card bg-gray-800/90 border-gray-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <ShoppingBag className="w-5 h-5" />
@@ -583,7 +586,10 @@ export function FinancialDashboard({
                   1,
                 );
                 return (
-                  <div key={index} className="flex items-center gap-3">
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 transition duration-300 hover:translate-x-1"
+                  >
                     <div
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: item.color }}
@@ -597,7 +603,7 @@ export function FinancialDashboard({
                       </div>
                       <div className="h-2 bg-gray-700 rounded-full mt-1">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="motion-bar h-full rounded-full transition-all duration-500"
                           style={{
                             width: `${Math.min(100, parseFloat(percentage))}%`,
                             backgroundColor: item.color,
@@ -614,7 +620,7 @@ export function FinancialDashboard({
       </Card>
 
       {/* Financial Insights */}
-      <Card className="overflow-hidden border-gray-700 bg-gradient-to-br from-gray-800 via-gray-800 to-gray-900">
+      <Card className="motion-card overflow-hidden border-gray-700 bg-gradient-to-br from-gray-800/95 via-gray-800/90 to-gray-900">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2 text-base">
             <span className="text-xl">💡</span>
@@ -626,7 +632,7 @@ export function FinancialDashboard({
             {insights.map((insight) => (
               <div
                 key={`${insight.title}-${insight.metric}`}
-                className={`rounded-2xl border p-4 ${getInsightStyles(insight.tone)}`}
+                className={`motion-card rounded-2xl border p-4 ${getInsightStyles(insight.tone)}`}
               >
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <h4 className="text-sm font-semibold text-white">
@@ -645,7 +651,7 @@ export function FinancialDashboard({
         </CardContent>
       </Card>
 
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="motion-card bg-gray-800/90 border-gray-700">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2 text-base">
             <ListChecks className="w-5 h-5" />
@@ -657,7 +663,7 @@ export function FinancialDashboard({
             {actionPlan.map((item, index) => (
               <div
                 key={item.title}
-                className="relative overflow-hidden rounded-2xl border border-gray-700 bg-gray-900/70 p-4"
+                className="motion-card relative overflow-hidden rounded-2xl border border-gray-700 bg-gray-900/70 p-4"
               >
                 <div
                   className="absolute inset-x-0 top-0 h-1"

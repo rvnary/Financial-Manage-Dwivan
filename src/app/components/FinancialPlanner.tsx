@@ -171,8 +171,8 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 py-8">
-      <div className="container mx-auto px-4">
+    <div className="motion-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(112,224,0,0.12),transparent_32%),linear-gradient(135deg,#030712,#111827_48%,#020617)] py-8">
+      <div className="motion-layer container mx-auto px-4">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -186,7 +186,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mx-auto">
             {/* Form Section */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="motion-card motion-glow bg-gray-800/90 border-gray-700 shadow-2xl shadow-black/20 backdrop-blur">
               <CardHeader>
                 <CardTitle className="text-white">Financial Details</CardTitle>
                 <CardDescription className="text-gray-400">
@@ -195,7 +195,10 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form
+                  onSubmit={handleSubmit}
+                  className="motion-stagger space-y-6"
+                >
                   <div className="space-y-2">
                     <Label htmlFor="salary" className="text-gray-300">
                       Monthly Salary
@@ -213,7 +216,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         handleInputChange("monthlySalary", e.target.value)
                       }
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                     />
                   </div>
 
@@ -234,7 +237,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         handleInputChange("primaryExpenses", e.target.value)
                       }
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                     />
                   </div>
 
@@ -255,7 +258,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         handleInputChange("secondaryExpenses", e.target.value)
                       }
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                     />
                   </div>
 
@@ -274,7 +277,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         handleInputChange("savings", e.target.value)
                       }
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                     />
                   </div>
 
@@ -295,7 +298,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         handleInputChange("pocketMoney", e.target.value)
                       }
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                      className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                     />
                   </div>
 
@@ -316,7 +319,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         onChange={(e) =>
                           handleInputChange("financialGoal", e.target.value)
                         }
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                        className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                       />
                     </div>
 
@@ -336,14 +339,14 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         onChange={(e) =>
                           handleInputChange("emergencyFund", e.target.value)
                         }
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
+                        className="bg-gray-700/80 border-gray-600 text-white placeholder:text-gray-500 transition focus:border-green-400 focus:ring-green-400/30"
                       />
                     </div>
                   </div>
 
                   {salary > 0 && (
                     <div
-                      className={`rounded-2xl border p-4 shadow-lg ${
+                      className={`motion-card rounded-2xl border p-4 shadow-lg ${
                         isOverBudget
                           ? "border-red-800 bg-red-950/60"
                           : "border-green-800 bg-green-950/40"
@@ -363,8 +366,8 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                         <div
                           className={
                             isOverBudget
-                              ? "h-full bg-red-500"
-                              : "h-full bg-green-500"
+                              ? "motion-bar h-full bg-red-500 transition-all duration-700"
+                              : "motion-bar h-full bg-green-500 transition-all duration-700"
                           }
                           style={{ width: `${Math.min(100, allocationRate)}%` }}
                         />
@@ -406,7 +409,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                   <div className="flex gap-4">
                     <Button
                       type="submit"
-                      className="flex-1 text-white hover:opacity-90"
+                      className="flex-1 text-white transition duration-300 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg hover:shadow-green-900/30"
                       style={{ backgroundColor: "#007200" }}
                     >
                       Calculate
@@ -415,7 +418,7 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
                       type="button"
                       variant="outline"
                       onClick={handleReset}
-                      className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                      className="bg-gray-700 border-gray-600 text-gray-300 transition duration-300 hover:-translate-y-0.5 hover:bg-gray-600"
                     >
                       Reset
                     </Button>
@@ -427,39 +430,39 @@ export function FinancialPlanner({ onBack }: FinancialPlannerProps) {
 
           {/* Tabbed Sections - Only show after calculation */}
           {showResults && (
-            <div ref={resultsRef} className="mt-8 scroll-mt-6">
+            <div ref={resultsRef} className="motion-card mt-8 scroll-mt-6">
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-4 bg-gray-800 border border-gray-700">
+                <TabsList className="motion-glow grid h-auto w-full grid-cols-2 gap-1 bg-gray-800/90 border border-gray-700 backdrop-blur sm:grid-cols-4">
                   <TabsTrigger
                     value="dashboard"
-                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                    className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
                   >
-                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    <LayoutDashboard className="w-4 h-4 sm:mr-2" />
                     Dashboard
                   </TabsTrigger>
                   <TabsTrigger
                     value="investments"
-                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                    className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
                   >
-                    <TrendingUp className="w-4 h-4 mr-2" />
+                    <TrendingUp className="w-4 h-4 sm:mr-2" />
                     Investments
                   </TabsTrigger>
                   <TabsTrigger
                     value="simulator"
-                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                    className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
                   >
-                    <Calculator className="w-4 h-4 mr-2" />
+                    <Calculator className="w-4 h-4 sm:mr-2" />
                     Simulator
                   </TabsTrigger>
                   <TabsTrigger
                     value="portfolio"
-                    className="data-[state=active]:bg-gray-700 text-gray-400 data-[state=active]:text-white"
+                    className="min-h-10 transition duration-300 data-[state=active]:bg-gray-700 data-[state=active]:shadow-inner text-gray-400 data-[state=active]:text-white"
                   >
-                    <PieChart className="w-4 h-4 mr-2" />
+                    <PieChart className="w-4 h-4 sm:mr-2" />
                     Portfolio
                   </TabsTrigger>
                 </TabsList>

@@ -6,7 +6,13 @@ import {
   CardTitle,
 } from "./ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { TrendingUp, AlertCircle } from "lucide-react";
+import {
+  TrendingUp,
+  AlertCircle,
+  ShieldCheck,
+  Scale,
+  Rocket,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface InvestmentRecommendationsProps {
@@ -55,6 +61,10 @@ interface AllocationOption {
   profile: RiskProfile;
   label: string;
   description: string;
+  thesis: string;
+  bestFor: string;
+  reason: string;
+  behavior: string;
   allocations: Array<{
     name: string;
     symbol: string;
@@ -107,8 +117,16 @@ export function InvestmentRecommendations({
   const allocationOptions: AllocationOption[] = [
     {
       profile: "low",
-      label: "Low Risk",
-      description: "Conservative: Index + Defensive dividend stocks",
+      label: "Conservative",
+      description: "Index core + defensive dividend stocks",
+      thesis:
+        "Prioritasnya menjaga modal tetap stabil sebelum mengejar return besar.",
+      bestFor:
+        "Cocok untuk dana awal, horizon pendek-menengah, atau investor yang tidak nyaman dengan volatilitas tinggi.",
+      reason:
+        "SPY memberi diversifikasi luas, sedangkan JNJ dan KO dipilih karena bisnisnya defensif, arus kas kuat, dan historis lebih tahan saat pasar melemah.",
+      behavior:
+        "Return cenderung lebih lambat, tetapi penurunan portofolio biasanya lebih terkendali.",
       allocations: [
         {
           name: "S&P 500 ETF (SPY)",
@@ -133,8 +151,16 @@ export function InvestmentRecommendations({
     },
     {
       profile: "medium",
-      label: "Medium Risk",
-      description: "Balanced: Index + Blue-chip tech",
+      label: "Balanced",
+      description: "Index core + profitable blue-chip tech",
+      thesis:
+        "Profil ini menyeimbangkan stabilitas indeks dengan mesin pertumbuhan dari perusahaan teknologi besar.",
+      bestFor:
+        "Cocok untuk investor yang ingin growth, tetapi tetap punya jangkar diversifikasi.",
+      reason:
+        "SPY menjaga eksposur pasar luas, MSFT memberi kualitas pendapatan enterprise/cloud, dan AAPL memberi kekuatan ekosistem serta brand yang konsisten.",
+      behavior:
+        "Fluktuasi lebih terasa dari Conservative, namun potensi return lebih menarik untuk akumulasi rutin.",
       allocations: [
         {
           name: "S&P 500 ETF (SPY)",
@@ -159,8 +185,16 @@ export function InvestmentRecommendations({
     },
     {
       profile: "high",
-      label: "High Risk",
-      description: "Aggressive: High-growth tech stocks",
+      label: "Aggressive",
+      description: "High-conviction growth and innovation stocks",
+      thesis:
+        "Profil ini mengejar pertumbuhan tinggi dengan menerima risiko drawdown yang lebih besar.",
+      bestFor:
+        "Cocok untuk horizon panjang, surplus yang tidak dipakai kebutuhan wajib, dan investor yang siap melihat harga naik-turun tajam.",
+      reason:
+        "NVDA dipilih untuk eksposur AI/GPU, TSLA untuk inovasi EV/energi dengan volatilitas tinggi, dan AAPL sebagai penyeimbang kualitas dalam basket growth.",
+      behavior:
+        "Potensi naiknya paling besar, tetapi koreksi jangka pendek juga bisa paling agresif.",
       allocations: [
         {
           name: "NVIDIA (NVDA)",
@@ -189,6 +223,34 @@ export function InvestmentRecommendations({
     (opt) => opt.profile === selectedProfile,
   )!;
 
+  const profileVisuals: Record<
+    RiskProfile,
+    { icon: typeof ShieldCheck; accent: string; label: string; active: string }
+  > = {
+    low: {
+      icon: ShieldCheck,
+      accent: "#38bdf8",
+      label: "Capital protection",
+      active:
+        "bg-sky-600 border-sky-400 text-white shadow-lg shadow-sky-900/30",
+    },
+    medium: {
+      icon: Scale,
+      accent: "#70e000",
+      label: "Risk-return balance",
+      active:
+        "bg-green-600 border-green-500 text-white shadow-lg shadow-green-900/30",
+    },
+    high: {
+      icon: Rocket,
+      accent: "#ef4444",
+      label: "Growth acceleration",
+      active:
+        "bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/30",
+    },
+  };
+  const SelectedProfileIcon = profileVisuals[selectedProfile].icon;
+
   // Calculate amounts for each allocation
   const allocationData = selectedAllocation.allocations.map((alloc) => ({
     ...alloc,
@@ -213,7 +275,7 @@ export function InvestmentRecommendations({
   };
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className="motion-card motion-glow bg-gray-800/90 border-gray-700 backdrop-blur">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           <TrendingUp className="w-5 h-5" />
@@ -227,7 +289,7 @@ export function InvestmentRecommendations({
         <div className="space-y-6">
           {/* Remaining Money Display */}
           <div
-            className={`p-4 rounded-lg border ${
+            className={`motion-card p-4 rounded-lg border ${
               hasRemainingMoney
                 ? "bg-green-950 border-green-800"
                 : "bg-red-950 border-red-800"
@@ -260,14 +322,14 @@ export function InvestmentRecommendations({
                 <h4 className="font-medium text-white mb-3">
                   Select Risk Profile
                 </h4>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   {allocationOptions.map((option) => (
                     <button
                       key={option.profile}
                       onClick={() => setSelectedProfile(option.profile)}
-                      className={`p-3 rounded-lg transition border ${
+                      className={`motion-card p-3 rounded-lg transition border text-left ${
                         selectedProfile === option.profile
-                          ? "bg-green-600 border-green-500 text-white"
+                          ? profileVisuals[option.profile].active
                           : "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
                       }`}
                     >
@@ -278,8 +340,69 @@ export function InvestmentRecommendations({
                 </div>
               </div>
 
+              <div
+                className="motion-card rounded-2xl border bg-gray-900/70 p-5"
+                style={{
+                  borderColor: `${profileVisuals[selectedProfile].accent}55`,
+                }}
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div
+                    className="motion-pulse-soft rounded-2xl p-3"
+                    style={{
+                      backgroundColor: `${profileVisuals[selectedProfile].accent}20`,
+                    }}
+                  >
+                    <SelectedProfileIcon
+                      className="h-5 w-5"
+                      style={{ color: profileVisuals[selectedProfile].accent }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.25em] text-gray-500">
+                      {profileVisuals[selectedProfile].label}
+                    </p>
+                    <h4 className="text-lg font-semibold text-white">
+                      Why {selectedAllocation.label} is included
+                    </h4>
+                  </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {[
+                    selectedAllocation.thesis,
+                    selectedAllocation.reason,
+                    selectedAllocation.bestFor,
+                    selectedAllocation.behavior,
+                  ].map((text, index) => (
+                    <div
+                      key={text}
+                      className="rounded-xl border bg-black/20 p-3 text-sm leading-relaxed text-gray-300"
+                      style={{
+                        borderColor: `${profileVisuals[selectedProfile].accent}33`,
+                      }}
+                    >
+                      <span
+                        className="mb-1 block text-xs font-semibold"
+                        style={{
+                          color: profileVisuals[selectedProfile].accent,
+                        }}
+                      >
+                        {index === 0
+                          ? "Thesis"
+                          : index === 1
+                            ? "Reason"
+                            : index === 2
+                              ? "Suitable for"
+                              : "Expected behavior"}
+                      </span>
+                      {text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Pie Chart */}
-              <div className="bg-gray-700 rounded-lg p-4">
+              <div className="motion-card bg-gray-700/80 rounded-lg p-4">
                 <h4 className="font-medium text-white mb-4">
                   Allocation Breakdown
                 </h4>
@@ -361,7 +484,7 @@ export function InvestmentRecommendations({
                   return (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition"
+                      className="motion-card flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition"
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div
@@ -556,7 +679,7 @@ export function InvestmentRecommendations({
 
               {/* Additional Tips */}
               <div
-                className="rounded-lg p-4 border"
+                className="motion-card rounded-lg p-4 border"
                 style={{
                   backgroundColor: "#70e00010",
                   borderColor: "#70e00030",
@@ -567,16 +690,19 @@ export function InvestmentRecommendations({
                 </h4>
                 <ul className="text-sm space-y-1 text-gray-300">
                   <li>
-                    • <strong>Low Risk:</strong> Index + Defensive (SPY, JNJ,
-                    KO) - prioritizes capital preservation and dividends
+                    • <strong>Conservative:</strong> SPY, JNJ, KO - disertakan
+                    untuk menjaga diversifikasi, stabilitas bisnis defensif, dan
+                    potensi dividen.
                   </li>
                   <li>
-                    • <strong>Medium Risk:</strong> Index + Tech (SPY, MSFT,
-                    AAPL) - balanced growth with stability
+                    • <strong>Balanced:</strong> SPY, MSFT, AAPL - disertakan
+                    agar portofolio punya indeks luas sekaligus growth dari
+                    blue-chip tech.
                   </li>
                   <li>
-                    • <strong>High Risk:</strong> High-growth Tech (NVDA, TSLA,
-                    AAPL) - maximum growth potential with volatility
+                    • <strong>Aggressive:</strong> NVDA, TSLA, AAPL - disertakan
+                    untuk mengejar inovasi/pertumbuhan tinggi dengan risiko
+                    volatilitas lebih besar.
                   </li>
                   <li>
                     • Each risk profile has different stocks suited to that risk

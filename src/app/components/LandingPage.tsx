@@ -7,13 +7,13 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="motion-page min-h-screen bg-[radial-gradient(circle_at_top,rgba(112,224,0,0.12),transparent_32%),linear-gradient(135deg,#030712,#111827_48%,#020617)]">
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="motion-layer container mx-auto px-4 py-16">
+        <div className="motion-stagger max-w-4xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <div
-              className="p-4 rounded-full"
+              className="motion-card motion-glow motion-pulse-soft p-4 rounded-full shadow-2xl shadow-green-950/40"
               style={{ backgroundColor: "#007200" }}
             >
               <TrendingUp className="w-12 h-12 text-white" />
@@ -35,7 +35,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <Button
             onClick={onGetStarted}
             size="lg"
-            className="text-lg px-8 py-6 text-white hover:opacity-90"
+            className="motion-card text-lg px-8 py-6 text-white transition duration-300 hover:-translate-y-1 hover:opacity-95 hover:shadow-xl hover:shadow-green-900/40"
             style={{ backgroundColor: "#007200" }}
           >
             Get Started
@@ -43,10 +43,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
 
         {/* Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 mt-20 max-w-5xl mx-auto">
-          <div className="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+        <div className="motion-stagger grid md:grid-cols-3 gap-8 mt-20 max-w-5xl mx-auto">
+          <div className="motion-card motion-glow bg-gray-800/90 p-8 rounded-xl shadow-lg border border-gray-700 backdrop-blur">
             <div
-              className="w-14 h-14 rounded-lg flex items-center justify-center mb-4"
+              className="motion-pulse-soft w-14 h-14 rounded-lg flex items-center justify-center mb-4"
               style={{ backgroundColor: "#9ef01a30" }}
             >
               <PiggyBank className="w-7 h-7" style={{ color: "#9ef01a" }} />
@@ -58,9 +58,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
           </div>
 
-          <div className="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+          <div className="motion-card motion-glow bg-gray-800/90 p-8 rounded-xl shadow-lg border border-gray-700 backdrop-blur">
             <div
-              className="w-14 h-14 rounded-lg flex items-center justify-center mb-4"
+              className="motion-pulse-soft w-14 h-14 rounded-lg flex items-center justify-center mb-4"
               style={{ backgroundColor: "#70e00030" }}
             >
               <DollarSign className="w-7 h-7" style={{ color: "#70e000" }} />
@@ -74,9 +74,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
           </div>
 
-          <div className="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+          <div className="motion-card motion-glow bg-gray-800/90 p-8 rounded-xl shadow-lg border border-gray-700 backdrop-blur">
             <div
-              className="w-14 h-14 rounded-lg flex items-center justify-center mb-4"
+              className="motion-pulse-soft w-14 h-14 rounded-lg flex items-center justify-center mb-4"
               style={{ backgroundColor: "#38b00030" }}
             >
               <BarChart3 className="w-7 h-7" style={{ color: "#38b000" }} />

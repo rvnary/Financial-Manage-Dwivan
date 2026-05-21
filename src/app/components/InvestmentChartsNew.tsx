@@ -107,6 +107,33 @@ export function InvestmentCharts({
     Record<string, InvestmentOption[]>
   >({});
 
+  const profileNarratives = {
+    conservative: {
+      label: "Conservative",
+      accent: "#38bdf8",
+      title: "Stabil dulu, growth belakangan",
+      reason:
+        "SPY dipakai sebagai core diversifikasi, lalu JNJ dan KO disertakan karena karakter bisnisnya defensif sehingga cocok saat prioritasnya menjaga modal.",
+    },
+    balanced: {
+      label: "Balanced",
+      accent: "#70e000",
+      title: "Seimbang antara safety dan growth",
+      reason:
+        "SPY menjadi jangkar pasar luas, sementara MSFT dan AAPL disertakan karena kualitas laba dan ekosistemnya memberi potensi pertumbuhan yang lebih konsisten.",
+    },
+    aggressive: {
+      label: "Aggressive",
+      accent: "#ef4444",
+      title: "Kejar upside, siap volatilitas",
+      reason:
+        "NVDA dan TSLA disertakan untuk eksposur inovasi berisiko tinggi, sedangkan AAPL membantu memberi fondasi kualitas di portofolio growth.",
+    },
+  } satisfies Record<
+    "conservative" | "balanced" | "aggressive",
+    { label: string; accent: string; title: string; reason: string }
+  >;
+
   // All stock definitions organized by risk profile
   // Using 3 stocks per profile to minimize API calls (Alpha Vantage: 5 calls/min)
   // These are well-known US stocks that work reliably with Alpha Vantage
@@ -665,7 +692,7 @@ export function InvestmentCharts({
   }
 
   return (
-    <div className="space-y-6 mt-8">
+    <div className="motion-stagger space-y-6 mt-8">
       {/* Yahoo Finance - FREE real-time data */}
 
       <div className="flex items-center gap-2">
@@ -682,7 +709,7 @@ export function InvestmentCharts({
       </p>
 
       {/* Risk Profile Selector for Investment Cards */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+      <div className="motion-card motion-glow bg-gray-800/90 border border-gray-700 rounded-lg p-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-white font-medium">Select Risk Profile</h3>
@@ -696,7 +723,7 @@ export function InvestmentCharts({
                 <button
                   key={profile}
                   onClick={() => setSelectedRiskProfile(profile)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-300 hover:-translate-y-0.5 ${
                     selectedRiskProfile === profile
                       ? profile === "conservative"
                         ? "bg-blue-600 text-white"
@@ -707,10 +734,10 @@ export function InvestmentCharts({
                   }`}
                 >
                   {profile === "conservative"
-                    ? "🛡️ Low Risk"
+                    ? "🛡️ Conservative"
                     : profile === "balanced"
-                      ? "⚖️ Medium Risk"
-                      : "🚀 High Risk"}
+                      ? "⚖️ Balanced"
+                      : "🚀 Aggressive"}
                 </button>
               ),
             )}
@@ -718,12 +745,30 @@ export function InvestmentCharts({
         </div>
         <div className="mt-3 text-xs text-gray-500">
           {selectedRiskProfile === "conservative" &&
-            "Low Risk: Index + Defensive - S&P 500 (SPY), Johnson & Johnson (JNJ), Coca-Cola (KO)"}
+            "Conservative: SPY + JNJ + KO untuk diversifikasi dan defensiveness."}
           {selectedRiskProfile === "balanced" &&
-            "Medium Risk: Index + Tech - S&P 500 (SPY), Microsoft (MSFT), Apple (AAPL)"}
+            "Balanced: SPY + MSFT + AAPL untuk indeks luas dan quality growth."}
           {selectedRiskProfile === "aggressive" &&
-            "High Risk: High-Growth Tech - NVIDIA (NVDA), Tesla (TSLA), Apple (AAPL)"}
+            "Aggressive: NVDA + TSLA + AAPL untuk growth tinggi dengan volatilitas lebih besar."}
         </div>
+      </div>
+
+      <div
+        className="motion-card rounded-2xl border bg-gray-900/70 p-5"
+        style={{
+          borderColor: `${profileNarratives[selectedRiskProfile].accent}55`,
+        }}
+      >
+        <p className="text-xs uppercase tracking-[0.24em] text-gray-500">
+          Portfolio thesis
+        </p>
+        <h3 className="mt-1 text-xl font-semibold text-white">
+          {profileNarratives[selectedRiskProfile].label}:{" "}
+          {profileNarratives[selectedRiskProfile].title}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-gray-300">
+          {profileNarratives[selectedRiskProfile].reason}
+        </p>
       </div>
 
       {/* Investment Cards */}
@@ -731,7 +776,7 @@ export function InvestmentCharts({
         {investments.map((investment, index) => (
           <Card
             key={index}
-            className="overflow-hidden bg-gray-800 border-gray-700"
+            className="motion-card overflow-hidden bg-gray-800/90 border-gray-700"
           >
             <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-750">
               <div className="flex justify-between items-start">
@@ -784,7 +829,7 @@ export function InvestmentCharts({
             <CardContent className="pt-6">
               {/* Price Analysis Summary */}
               {investment.priceAnalysis && (
-                <div className="grid grid-cols-3 md:grid-cols-3 gap-4 mb-6 p-3 bg-gray-700 rounded-lg">
+                <div className="motion-card grid grid-cols-3 md:grid-cols-3 gap-4 mb-6 p-3 bg-gray-700 rounded-lg">
                   <div>
                     <div className="text-xs text-gray-400">30-Day Return</div>
                     <div
@@ -871,7 +916,7 @@ export function InvestmentCharts({
               {/* Investment Summary */}
               {remainingMoney > 0 && (
                 <div
-                  className="mt-6 p-4 rounded-lg border"
+                  className="motion-card mt-6 p-4 rounded-lg border"
                   style={{
                     background:
                       "linear-gradient(to right, #70e00015, #9ef01a15)",
@@ -946,7 +991,7 @@ export function InvestmentCharts({
 
               {/* Recommendation */}
               <div
-                className="mt-4 p-3 bg-gray-700 border-l-4 rounded"
+                className="motion-card mt-4 p-3 bg-gray-700 border-l-4 rounded"
                 style={{ borderLeftColor: investment.color }}
               >
                 <p className="text-sm text-gray-300">
@@ -984,7 +1029,7 @@ export function InvestmentCharts({
       </div>
 
       {/* Portfolio Allocation Section */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="motion-card bg-gray-800/90 border-gray-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5" style={{ color: "#70e000" }} />
@@ -1002,7 +1047,7 @@ export function InvestmentCharts({
                 <button
                   key={profile}
                   onClick={() => setSelectedRiskProfile(profile)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-300 hover:-translate-y-0.5 ${
                     selectedRiskProfile === profile
                       ? "bg-green-600 text-white"
                       : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -1019,7 +1064,7 @@ export function InvestmentCharts({
             {portfolioAllocations.map((allocation, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                className="motion-card flex items-center justify-between p-3 bg-gray-700 rounded-lg"
               >
                 <div className="flex-1">
                   <div className="font-medium text-white">
@@ -1047,7 +1092,7 @@ export function InvestmentCharts({
 
           {/* Portfolio Summary */}
           <div
-            className="p-4 rounded-lg border"
+            className="motion-card p-4 rounded-lg border"
             style={{
               background: "linear-gradient(to right, #70e00015, #9ef01a15)",
               borderColor: "#70e00030",
@@ -1082,7 +1127,7 @@ export function InvestmentCharts({
 
           {remainingMoney > 0 && (
             <div
-              className="mt-4 p-4 rounded-lg border"
+              className="motion-card mt-4 p-4 rounded-lg border"
               style={{
                 background: "linear-gradient(to right, #3b82f615, #06b6d415)",
                 borderColor: "#3b82f630",
@@ -1112,7 +1157,7 @@ export function InvestmentCharts({
       </Card>
 
       {/* Disclaimer */}
-      <div className="bg-amber-950 border border-amber-800 rounded-lg p-4">
+      <div className="motion-card bg-amber-950 border border-amber-800 rounded-lg p-4">
         <h4 className="font-medium text-amber-400 mb-2">
           ⚠️ Investment Disclaimer
         </h4>
